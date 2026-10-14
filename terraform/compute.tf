@@ -60,7 +60,6 @@ resource "aws_launch_template" "ecs" {
 
       find "$DATA_DIR" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
       cp -a "$RESTORE_DIR/extracted/data/." "$DATA_DIR/"
-      chown -R root:root "$DATA_DIR"
       logger "Uptime Kuma data restored from verified backup: $LATEST_KEY"
     else
       logger "No application backup exists yet; starting with a fresh Uptime Kuma data directory."
