@@ -62,6 +62,8 @@ jobs:
 
       - name: Create saved plan
         working-directory: terraform
+        env:
+          TF_VAR_alert_email: ${{ vars.ALERT_EMAIL }}
         run: terraform plan -input=false -no-color -out="$RUNNER_TEMP/tfplan"
 
       - name: Write plan summary
