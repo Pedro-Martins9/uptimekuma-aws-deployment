@@ -31,7 +31,7 @@ resource "aws_launch_template" "ecs" {
     LATEST_KEY="$(aws s3api list-objects-v2 \
       --bucket "$BACKUP_BUCKET" \
       --prefix "uptimekuma/archives/" \
-      --query 'reverse(sort_by(Contents, &LastModified))[0].Key' \
+      --query 'reverse(sort_by(Contents || `[]`, &LastModified))[0].Key' \
       --output text \
       --region eu-west-1)"
 
