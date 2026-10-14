@@ -88,6 +88,10 @@ resource "aws_launch_template" "ecs" {
     }
   }
 
+  # Ensure the instance role has backup/restore permissions before ASG
+  # launches an instance whose user data accesses the S3 backup bucket.
+  depends_on = [aws_iam_role_policy.ecs_instance_backup]
+
   lifecycle {
     create_before_destroy = true
   }
