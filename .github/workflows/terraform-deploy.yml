@@ -1,0 +1,137 @@
+name: Terraform deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Plan only, or request an apply"
+        required: true
+        type: choice
+        options:
+          - plan
+          - deploy
+        default: plan
+      confirm:
+        description: "For deploy mode only, type DEPLOY. Otherwise no apply job will run."
+        required: true
+        type: string
+        default: "NO"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: uptimekuma-terraform-main
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    name: Create Terraform plan
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout the selected main-branch commit
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4.0.1
+        with:
+          terraform_version: "1.16.5"
+          terraform_wrapper: false
+
+      - name: Configure short-lived AWS credentials (plan role)
+        uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_TERRAFORM_PLAN_ROLE_ARN }}
+          role-session-name: gha-terraform-plan-${{ github.run_id }}
+          aws-region: eu-west-1
+          allowed-account-ids: "REPLACE_WITH_AWS_ACCOUNT_ID"
+
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
+
+      - name: Initialize Terraform backend
+        working-directory: terraform
+        run: terraform init -input=false -lockfile=readonly
+
+      - name: Create saved plan
+        working-directory: terraform
+        run: terraform plan -input=false -no-color -out="$RUNNER_TEMP/tfplan"
+
+      - name: Write plan summary
+        working-directory: terraform
+        shell: bash
+        run: |
+          set -euo pipefail
+          terraform show -no-color "$RUNNER_TEMP/tfplan" > "$RUNNER_TEMP/tfplan-review.txt"
+          {
+            echo "## Terraform plan"
+            echo
+            grep -E '^Plan:|^No changes\.' "$RUNNER_TEMP/tfplan-review.txt" || true
+            echo
+            echo "The full plan is available in the short-lived private workflow artifact. Review it before approving an apply."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the saved plan for this workflow run only
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: terraform-plan
+          path: |
+            ${{ runner.temp }}/tfplan
+            ${{ runner.temp }}/tfplan-review.txt
+          if-no-files-found: error
+          retention-days: 1
+
+  apply:
+    name: Apply the reviewed saved plan
+    needs: plan
+    if: ${{ github.ref == 'refs/heads/main' && inputs.mode == 'deploy' && inputs.confirm == 'DEPLOY' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: aws-deploy
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout the same commit used for planning
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Set up the same Terraform version
+        uses: hashicorp/setup-terraform@v4.0.1
+        with:
+          terraform_version: "1.16.5"
+          terraform_wrapper: false
+
+      - name: Download the saved plan from this run
+        uses: actions/download-artifact@v7.0.2
+        with:
+          name: terraform-plan
+          path: ${{ runner.temp }}/tfplan-artifact
+
+      - name: Configure short-lived AWS credentials (apply role)
+        uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_TERRAFORM_APPLY_ROLE_ARN }}
+          role-session-name: gha-terraform-apply-${{ github.run_id }}
+          aws-region: eu-west-1
+          allowed-account-ids: "REPLACE_WITH_AWS_ACCOUNT_ID"
+
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
+
+      - name: Initialize Terraform backend
+        working-directory: terraform
+        run: terraform init -input=false -lockfile=readonly
+
+      - name: Apply only the saved plan produced earlier in this run
+        working-directory: terraform
+        run: terraform apply -input=false "$RUNNER_TEMP/tfplan-artifact/tfplan"
