@@ -122,3 +122,40 @@ resource "aws_ssm_association" "daily_backup" {
     EOT
   }
 }
+
+
+# Periodically publish whether the newest S3 backup is fresh. This emits a
+# data point every hour so CloudWatch can detect both stale data and a missing
+# freshness check, instead of treating a once-daily datapoint as a heartbeat.
+resource "aws_ssm_association" "backup_freshness" {
+  name                        = "AWS-RunShellScript"
+  association_name            = "uptimekuma-backup-freshness-check"
+  schedule_expression         = "cron(0 * * * ? *)"
+  apply_only_at_cron_interval = true
+  max_concurrency             = "1"
+  max_errors                  = "1"
+
+  targets {
+    key    = "tag:Project"
+    values = ["uptimekuma"]
+  }
+
+  parameters = {
+    commands = <<-EOT
+      set -eu
+      BACKUP_BUCKET="${local.backup_bucket_name}"
+      LAST_MODIFIED="$(aws s3api list-objects-v2 --bucket "$BACKUP_BUCKET" --prefix "uptimekuma/archives/" --query 'reverse(sort_by(Contents, &LastModified))[0].LastModified' --output text --region eu-west-1)"
+      FRESH=0
+      if [ -n "$LAST_MODIFIED" ] && [ "$LAST_MODIFIED" != "None" ]; then
+        LAST_EPOCH="$(date -d "$LAST_MODIFIED" +%s)"
+        NOW_EPOCH="$(date +%s)"
+        AGE_SECONDS="$((NOW_EPOCH - LAST_EPOCH))"
+        if [ "$AGE_SECONDS" -ge 0 ] && [ "$AGE_SECONDS" -le 93600 ]; then
+          FRESH=1
+        fi
+      fi
+      aws cloudwatch put-metric-data --namespace UptimeKuma/Backup --metric-name BackupFresh --value "$FRESH" --unit Count --dimensions Name=Project,Value=uptimekuma --region eu-west-1
+      echo "BackupFresh=$FRESH; S3 LastModified=$LAST_MODIFIED"
+    EOT
+  }
+}
