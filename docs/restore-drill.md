@@ -58,9 +58,23 @@ aws ssm list-association-executions \
   --region eu-west-1 \
   --max-results 5 \
   --output table
+
+EXECUTION_ID="$(aws ssm list-association-executions \
+  --association-id "$ASSOCIATION_ID" \
+  --region eu-west-1 \
+  --max-results 1 \
+  --query 'AssociationExecutions[0].ExecutionId' \
+  --output text)"
+
+aws ssm describe-association-execution-targets \
+  --association-id "$ASSOCIATION_ID" \
+  --execution-id "$EXECUTION_ID" \
+  --region eu-west-1 \
+  --query 'AssociationExecutionTargets[].{Instance:ResourceId,Status:Status,Detail:DetailedStatus,Output:OutputSource}' \
+  --output json
 ```
 
-Wait until the most recent execution has completed successfully. If it fails, inspect Systems Manager Run Command output and fix the cause before proceeding.
+Wait until the most recent execution and target both report success. If the target fails, open Systems Manager → State Manager → the association → execution history to inspect the command output, then fix the cause before proceeding.
 
 Verify that a new archive and checksum object exist:
 
