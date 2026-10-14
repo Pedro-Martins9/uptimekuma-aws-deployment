@@ -98,16 +98,135 @@ The S3 write/delete scope is needed for Terraform to save state and acquire/rele
 
 ### Apply-role resource permissions
 
-The apply role additionally needs create/update/delete actions for the exact resources managed by `terraform/`: VPC/subnets/routes/Internet Gateway/security groups/launch template; ALB/listener/target group; ECS cluster/service/task definition/capacity provider; Auto Scaling Group; CloudWatch log group/alarms/metric queries; SNS topic/subscription; SSM associations; and IAM roles, role policy attachments, inline policies and instance profile named `uptimekuma-*`.
+Keep the plan role read-only apart from the state/lock object access. For the apply role, attach a second inline policy that allows the writes used by the main `terraform/` root. The following is a **portfolio-sandbox starting policy, not a guarantee of least privilege for every future edit**. It enumerates write actions used by the current configuration; review the resource scope and AWS AccessDenied results before using it in an account containing unrelated workloads. Both roles also need the state policy in section 3.
 
-As a practical starting point, add the provider write actions in a second inline policy and restrict IAM resources to these paths:
+Save the JSON below as `uptimekuma-terraform-apply` and attach it only to `uptimekuma-github-terraform-apply`:
 
-- `arn:aws:iam::REPLACE_WITH_AWS_ACCOUNT_ID:role/uptimekuma-*`
-- `arn:aws:iam::REPLACE_WITH_AWS_ACCOUNT_ID:instance-profile/uptimekuma-*`
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ManageProjectVpcAndLaunchTemplate",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateVpc", "ec2:DeleteVpc", "ec2:ModifyVpcAttribute",
+        "ec2:CreateSubnet", "ec2:DeleteSubnet", "ec2:ModifySubnetAttribute",
+        "ec2:CreateInternetGateway", "ec2:DeleteInternetGateway",
+        "ec2:AttachInternetGateway", "ec2:DetachInternetGateway",
+        "ec2:CreateRouteTable", "ec2:DeleteRouteTable",
+        "ec2:CreateRoute", "ec2:DeleteRoute",
+        "ec2:AssociateRouteTable", "ec2:DisassociateRouteTable",
+        "ec2:CreateSecurityGroup", "ec2:DeleteSecurityGroup",
+        "ec2:AuthorizeSecurityGroupIngress", "ec2:AuthorizeSecurityGroupEgress",
+        "ec2:RevokeSecurityGroupIngress", "ec2:RevokeSecurityGroupEgress",
+        "ec2:CreateLaunchTemplate", "ec2:DeleteLaunchTemplate",
+        "ec2:CreateTags", "ec2:DeleteTags"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ManageProjectLoadBalancer",
+      "Effect": "Allow",
+      "Action": [
+        "elasticloadbalancing:CreateLoadBalancer", "elasticloadbalancing:DeleteLoadBalancer",
+        "elasticloadbalancing:DescribeLoadBalancers",
+        "elasticloadbalancing:CreateTargetGroup", "elasticloadbalancing:DeleteTargetGroup",
+        "elasticloadbalancing:DescribeTargetGroups", "elasticloadbalancing:DescribeTargetHealth",
+        "elasticloadbalancing:CreateListener", "elasticloadbalancing:DeleteListener",
+        "elasticloadbalancing:DescribeListeners", "elasticloadbalancing:ModifyListener",
+        "elasticloadbalancing:DescribeTags", "elasticloadbalancing:AddTags",
+        "elasticloadbalancing:RemoveTags"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ManageProjectEcsAndCapacity",
+      "Effect": "Allow",
+      "Action": [
+        "ecs:CreateCluster", "ecs:DeleteCluster", "ecs:DescribeClusters", "ecs:ListClusters",
+        "ecs:PutClusterCapacityProviders",
+        "ecs:RegisterTaskDefinition", "ecs:DeregisterTaskDefinition", "ecs:DescribeTaskDefinition",
+        "ecs:CreateService", "ecs:UpdateService", "ecs:DeleteService",
+        "ecs:DescribeServices", "ecs:ListServices",
+        "ecs:CreateCapacityProvider", "ecs:UpdateCapacityProvider",
+        "ecs:DeleteCapacityProvider", "ecs:DescribeCapacityProviders",
+        "ecs:TagResource", "ecs:UntagResource",
+        "autoscaling:CreateAutoScalingGroup", "autoscaling:UpdateAutoScalingGroup",
+        "autoscaling:DeleteAutoScalingGroup", "autoscaling:DescribeAutoScalingGroups",
+        "autoscaling:DescribeScalingActivities", "autoscaling:DescribePolicies",
+        "autoscaling:CreateOrUpdateTags", "autoscaling:DeleteTags"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ManageProjectLogsAlarmsAndNotifications",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup", "logs:DeleteLogGroup", "logs:PutRetentionPolicy",
+        "logs:DescribeLogGroups", "logs:ListTagsForResource",
+        "logs:TagResource", "logs:UntagResource",
+        "cloudwatch:PutMetricAlarm", "cloudwatch:DeleteAlarms",
+        "cloudwatch:DescribeAlarms", "cloudwatch:ListMetrics",
+        "cloudwatch:GetMetricData", "cloudwatch:GetMetricStatistics",
+        "sns:CreateTopic", "sns:DeleteTopic", "sns:Subscribe", "sns:Unsubscribe",
+        "sns:GetTopicAttributes", "sns:SetTopicAttributes",
+        "sns:ListTagsForResource", "sns:TagResource", "sns:UntagResource"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ManageProjectSsmAssociations",
+      "Effect": "Allow",
+      "Action": [
+        "ssm:CreateAssociation", "ssm:UpdateAssociation", "ssm:DeleteAssociation",
+        "ssm:DescribeAssociation", "ssm:DescribeAssociationExecutions",
+        "ssm:DescribeAssociationExecutionTargets", "ssm:ListAssociations",
+        "ssm:ListAssociationVersions", "ssm:GetParameter"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ManageOnlyProjectIamRoles",
+      "Effect": "Allow",
+      "Action": [
+        "iam:CreateRole", "iam:DeleteRole", "iam:GetRole",
+        "iam:UpdateAssumeRolePolicy", "iam:TagRole", "iam:UntagRole",
+        "iam:AttachRolePolicy", "iam:DetachRolePolicy",
+        "iam:PutRolePolicy", "iam:DeleteRolePolicy", "iam:GetRolePolicy",
+        "iam:ListRolePolicies", "iam:ListAttachedRolePolicies",
+        "iam:CreateInstanceProfile", "iam:DeleteInstanceProfile",
+        "iam:GetInstanceProfile", "iam:AddRoleToInstanceProfile",
+        "iam:RemoveRoleFromInstanceProfile", "iam:TagInstanceProfile",
+        "iam:UntagInstanceProfile"
+      ],
+      "Resource": [
+        "arn:aws:iam::REPLACE_WITH_AWS_ACCOUNT_ID:role/uptimekuma-*",
+        "arn:aws:iam::REPLACE_WITH_AWS_ACCOUNT_ID:instance-profile/uptimekuma-*"
+      ]
+    },
+    {
+      "Sid": "PassOnlyProjectRuntimeRoles",
+      "Effect": "Allow",
+      "Action": "iam:PassRole",
+      "Resource": [
+        "arn:aws:iam::REPLACE_WITH_AWS_ACCOUNT_ID:role/uptimekuma-ecs-instance-role",
+        "arn:aws:iam::REPLACE_WITH_AWS_ACCOUNT_ID:role/uptimekuma-ecs-task-execution-role"
+      ],
+      "Condition": {
+        "StringEquals": {
+          "iam:PassedToService": [
+            "ec2.amazonaws.com",
+            "ecs-tasks.amazonaws.com"
+          ]
+        }
+      }
+    }
+  ]
+}
+```
 
-Restrict `iam:PassRole` to the EC2 instance role and ECS task-execution role, and use `iam:PassedToService` conditions for `ec2.amazonaws.com` and `ecs-tasks.amazonaws.com`. Keep resource-management permissions off the plan role. AWS APIs for some create/describe actions require `Resource: "*"`; use only those actions that require it, and add tags/request-tag conditions where the service supports them.
-
-Because AWS provider behavior and the precise action set can evolve, run a plan first and grant only specific missing read actions if it returns AccessDenied. Review all policy changes before enabling apply. Do not solve an AccessDenied error by granting AdministratorAccess.
+Some create APIs and tagging operations do not support full resource scoping in the same way as update/delete APIs; the example uses `Resource: "*"` for several service groups. That is a trade-off, not perfect least privilege. For a shared or production account, split statements and restrict resources by ARN, request tags or existing tags wherever supported. Do not use this starter policy as a substitute for a policy review. The managed `ReadOnlyAccess` policy plus the state policy from section 3 remains on each role.
 
 ## 4. Configure GitHub
 
