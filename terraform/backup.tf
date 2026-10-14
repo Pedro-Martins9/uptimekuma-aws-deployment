@@ -68,6 +68,7 @@ resource "aws_ssm_association" "daily_backup" {
   parameters = {
     commands = <<-EOT
       set -eu
+      BACKUP_BUCKET="${local.backup_bucket_name}"
       BACKUP_DIR="$(mktemp -d)"
       BACKUP_OK=0
       cleanup() {
@@ -106,11 +107,11 @@ resource "aws_ssm_association" "daily_backup" {
 
       STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
       OBJECT_KEY="uptimekuma/$STAMP/kuma.db"
-      aws s3 cp "$BACKUP_FILE" "s3://$BUCKET/$OBJECT_KEY" --sse AES256 --region eu-west-1 --only-show-errors
-      aws s3api head-object --bucket "$BUCKET" --key "$OBJECT_KEY" --region eu-west-1 >/dev/null
+      aws s3 cp "$BACKUP_FILE" "s3://$BACKUP_BUCKET/$OBJECT_KEY" --sse AES256 --region eu-west-1 --only-show-errors
+      aws s3api head-object --bucket "$BACKUP_BUCKET" --key "$OBJECT_KEY" --region eu-west-1 >/dev/null
       aws cloudwatch put-metric-data --namespace UptimeKuma/Backup --metric-name BackupSuccess --value 1 --unit Count --dimensions Name=Project,Value=uptimekuma --region eu-west-1
       BACKUP_OK=1
-      echo "Backup succeeded: s3://$BUCKET/$OBJECT_KEY"
+      echo "Backup succeeded: s3://$BACKUP_BUCKET/$OBJECT_KEY"
     EOT
   }
 }
