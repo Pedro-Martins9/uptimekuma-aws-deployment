@@ -242,3 +242,28 @@ resource "aws_cloudwatch_metric_alarm" "backup_stale_or_failed" {
     Name = "uptimekuma-backup-stale-or-failed"
   }
 }
+
+
+resource "aws_cloudwatch_metric_alarm" "backup_execution_failed" {
+  alarm_name          = "uptimekuma-backup-execution-failed"
+  alarm_description   = "An SSM backup execution explicitly reported failure."
+  namespace           = "UptimeKuma/Backup"
+  metric_name         = "BackupSuccess"
+  statistic           = "Minimum"
+  period              = 3600
+  evaluation_periods  = 1
+  datapoints_to_alarm = 1
+  threshold           = 1
+  comparison_operator = "LessThanThreshold"
+  treat_missing_data  = "notBreaching"
+  alarm_actions       = local.alarm_actions
+  ok_actions          = local.alarm_actions
+
+  dimensions = {
+    Project = "uptimekuma"
+  }
+
+  tags = {
+    Name = "uptimekuma-backup-execution-failed"
+  }
+}
