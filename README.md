@@ -24,40 +24,43 @@ flowchart TB
   Internet((Internet))
   GH["GitHub repository<br/>Terraform + Actions"]
   OIDC["GitHub Actions OIDC<br/>short-lived AWS credentials<br/>roles require setup"]
-  State[("Persistent Terraform state<br/>S3 versioning + SSE-S3<br/>native .tflock")]
+  State[("Terraform state bucket<br/>versioning + SSE-S3<br/>native .tflock")]
 
-  subgraph AWS["AWS eu-west-1 — application stack currently destroyed"]
+  subgraph AWS["AWS eu-west-1 — app stack currently destroyed"]
     subgraph VPC["VPC 10.20.0.0/16"]
       IGW["Internet Gateway<br/>public default route"]
       subgraph AZA["Public subnet eu-west-1a"]
         EC2["ECS-optimized AL2023<br/>EC2 t3.small"]
       end
       subgraph AZB["Public subnet eu-west-1b"]
-        ALB["Internet-facing ALB<br/>HTTP :80"]
+        Spare["Second public subnet"]
       end
-      ECS["ECS cluster + capacity provider<br/>ASG 0–1 EC2 instances"]
-      App["Uptime Kuma task<br/>container :3001<br/>bridge + dynamic host port"]
-      TG["Instance target group<br/>HTTP health check /"]
-      Logs[("CloudWatch Logs<br/>7-day retention")]
-      SSM["SSM State Manager<br/>daily backup + hourly freshness"]
-      Metrics["CloudWatch alarms<br/>ALB / ECS / ASG / backup"]
-      SNS["Optional SNS email topic"]
-      EC2 --> App
-      ALB --> TG
-      TG -->|"observed mapping :32768"| App
-      ECS --> EC2
-      App --> Logs
-      EC2 --> SSM
-      Metrics --> SNS
-      IGW --> Internet
     end
-    Backup[("Separate app backup bucket<br/>S3 versioning + SSE-S3<br/>14-day current-object retention")]
+
+    ALB["Application Load Balancer<br/>attached to both subnets<br/>HTTP :80"]
+    TG["Instance target group<br/>HTTP health check /"]
+    ECS["ECS cluster + capacity provider<br/>ASG capacity 0–1"]
+    App["Uptime Kuma task<br/>container :3001<br/>bridge + dynamic host port"]
+    Logs[("CloudWatch Logs<br/>7-day retention")]
+    SSM["SSM State Manager<br/>daily backup + hourly freshness"]
+    Backup[("Separate app-backup S3 bucket<br/>versioning + SSE-S3<br/>14-day current-object retention")]
+    Alarms["CloudWatch alarms<br/>ALB / ECS / ASG / backup"]
+    SNS["Optional SNS email topic"]
+
+    ALB --> TG
+    TG -->|"observed host port 32768"| App
+    ECS --> EC2
+    EC2 --> App
+    App --> Logs
+    EC2 --> SSM
     SSM -->|"SQLite-consistent archive<br/>+ SHA-256 sidecar"| Backup
-    Backup -. "checksum and integrity verified<br/>during replacement boot" .-> EC2
+    Backup -. "verified latest archive<br/>on instance replacement" .-> EC2
+    Alarms --> SNS
+    IGW --> Internet
   end
 
-  User -->|"HTTP :80 (test deployment only)"| ALB
-  App -->|"monitor checks HTTP/HTTPS"| Internet
+  User -->|"HTTP :80 (test only)"| ALB
+  App -->|"monitor checks: HTTP / HTTPS"| Internet
   GH --> OIDC -->|"Terraform API calls"| AWS
   OIDC --> State
 ~~~
