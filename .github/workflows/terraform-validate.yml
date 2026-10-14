@@ -39,6 +39,7 @@ jobs:
         working-directory:
           - terraform
           - terraform/bootstrap-state
+          - terraform/backup-infra
     defaults:
       run:
         shell: bash
