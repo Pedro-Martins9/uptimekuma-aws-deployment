@@ -221,13 +221,13 @@ resource "aws_cloudwatch_metric_alarm" "asg_no_in_service_instances" {
 
 resource "aws_cloudwatch_metric_alarm" "backup_stale_or_failed" {
   alarm_name          = "uptimekuma-backup-stale-or-failed"
-  alarm_description   = "No successful SQLite backup was reported in the last 24 hours, or the latest backup run failed."
+  alarm_description   = "The hourly backup freshness check reports no recent S3 backup or has stopped reporting."
   namespace           = "UptimeKuma/Backup"
-  metric_name         = "BackupSuccess"
+  metric_name         = "BackupFresh"
   statistic           = "Minimum"
-  period              = 86400
-  evaluation_periods  = 1
-  datapoints_to_alarm = 1
+  period              = 3600
+  evaluation_periods  = 2
+  datapoints_to_alarm = 2
   threshold           = 1
   comparison_operator = "LessThanThreshold"
   treat_missing_data  = "breaching"
