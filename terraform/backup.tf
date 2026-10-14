@@ -4,8 +4,7 @@ locals {
   backup_bucket_name = format("uptimekuma-app-backups-%s", data.aws_caller_identity.current.account_id)
 }
 
-# A narrowly scoped EC2-instance policy is used by the daily SSM backup job
-# and by launch-time restore. It cannot read or write outside this app prefix.
+# Least-privilege access for the EC2 instance to back up and restore only this app prefix.
 resource "aws_iam_role_policy" "ecs_instance_backup" {
   name = "uptimekuma-instance-backup"
   role = aws_iam_role.ecs_instance.id
@@ -27,12 +26,11 @@ resource "aws_iam_role_policy" "ecs_instance_backup" {
         Effect = "Allow"
         Action = [
           "s3:ListBucket",
-          "s3:ListBucketMultipartUploads",
         ]
         Resource = format("arn:aws:s3:::%s", local.backup_bucket_name)
         Condition = {
           StringLike = {
-            "s3:prefix" = ["uptimekuma/*"]
+            "s3:prefix" = ["uptimekuma/archives/*"]
           }
         }
       },
@@ -50,8 +48,8 @@ resource "aws_iam_role_policy" "ecs_instance_backup" {
   })
 }
 
-# SSM State Manager executes this command on EC2 instances carrying Project=uptimekuma.
-# SQLite's online backup API makes a consistent DB snapshot, including committed WAL data.
+# SSM State Manager takes a transactionally consistent SQLite snapshot, then
+# packages the rest of the app data directory alongside it.
 resource "aws_ssm_association" "daily_backup" {
   name                        = "AWS-RunShellScript"
   association_name            = "uptimekuma-daily-sqlite-backup"
@@ -67,8 +65,9 @@ resource "aws_ssm_association" "daily_backup" {
 
   parameters = {
     commands = <<-EOT
-      set -eu
+      set -euo pipefail
       BACKUP_BUCKET="${local.backup_bucket_name}"
+      DATA_DIR="/var/lib/uptimekuma"
       BACKUP_DIR="$(mktemp -d)"
       BACKUP_OK=0
       cleanup() {
@@ -79,14 +78,15 @@ resource "aws_ssm_association" "daily_backup" {
       }
       trap cleanup EXIT
 
-      DATA_DB="/var/lib/uptimekuma/kuma.db"
+      DATA_DB="$DATA_DIR/kuma.db"
       if [ ! -f "$DATA_DB" ]; then
         echo "Uptime Kuma database not found at $DATA_DB" >&2
         exit 1
       fi
 
-      BACKUP_FILE="$BACKUP_DIR/kuma.db"
-      python3 - "$DATA_DB" "$BACKUP_FILE" <<'PY'
+      mkdir -p "$BACKUP_DIR/data"
+      tar --exclude='./kuma.db*' -C "$DATA_DIR" -cf - . | tar -C "$BACKUP_DIR/data" -xf -
+      python3 - "$DATA_DB" "$BACKUP_DIR/data/kuma.db" <<'PY'
       import sqlite3
       import sys
 
@@ -106,8 +106,15 @@ resource "aws_ssm_association" "daily_backup" {
       PY
 
       STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
-      OBJECT_KEY="uptimekuma/$STAMP/kuma.db"
-      aws s3 cp "$BACKUP_FILE" "s3://$BACKUP_BUCKET/$OBJECT_KEY" --sse AES256 --region eu-west-1 --only-show-errors
+      ARCHIVE="$BACKUP_DIR/uptimekuma-backup.tar.gz"
+      OBJECT_KEY="uptimekuma/archives/$STAMP.tar.gz"
+      CHECKSUM_KEY="uptimekuma/checksums/$STAMP.tar.gz.sha256"
+      tar -czf "$ARCHIVE" -C "$BACKUP_DIR" data
+      SHA256="$(sha256sum "$ARCHIVE" | awk '{print $1}')"
+      printf '%s\n' "$SHA256" > "$BACKUP_DIR/uptimekuma-backup.sha256"
+
+      aws s3 cp "$ARCHIVE" "s3://$BACKUP_BUCKET/$OBJECT_KEY" --sse AES256 --region eu-west-1 --only-show-errors
+      aws s3 cp "$BACKUP_DIR/uptimekuma-backup.sha256" "s3://$BACKUP_BUCKET/$CHECKSUM_KEY" --sse AES256 --region eu-west-1 --only-show-errors
       aws s3api head-object --bucket "$BACKUP_BUCKET" --key "$OBJECT_KEY" --region eu-west-1 >/dev/null
       aws cloudwatch put-metric-data --namespace UptimeKuma/Backup --metric-name BackupSuccess --value 1 --unit Count --dimensions Name=Project,Value=uptimekuma --region eu-west-1
       BACKUP_OK=1
