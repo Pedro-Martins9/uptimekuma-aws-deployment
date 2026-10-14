@@ -144,7 +144,7 @@ resource "aws_ssm_association" "backup_freshness" {
     commands = <<-EOT
       set -eu
       BACKUP_BUCKET="${local.backup_bucket_name}"
-      LAST_MODIFIED="$(aws s3api list-objects-v2 --bucket "$BACKUP_BUCKET" --prefix "uptimekuma/archives/" --query 'reverse(sort_by(Contents, &LastModified))[0].LastModified' --output text --region eu-west-1)"
+      LAST_MODIFIED="$(aws s3api list-objects-v2 --bucket "$BACKUP_BUCKET" --prefix "uptimekuma/archives/" --query 'reverse(sort_by(Contents || `[]`, &LastModified))[0].LastModified' --output text --region eu-west-1)"
       FRESH=0
       if [ -n "$LAST_MODIFIED" ] && [ "$LAST_MODIFIED" != "None" ]; then
         LAST_EPOCH="$(date -d "$LAST_MODIFIED" +%s)"
