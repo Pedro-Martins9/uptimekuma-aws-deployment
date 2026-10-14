@@ -4,6 +4,8 @@ resource "aws_autoscaling_group" "ecs" {
   min_size         = 0
   desired_capacity = 0
   max_size         = 1
+  enabled_metrics  = ["GroupInServiceInstances"]
+  metrics_granularity = "1Minute"
   vpc_zone_identifier = [
     aws_subnet.public.id,
     aws_subnet.public_secondary.id
