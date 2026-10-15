@@ -1,7 +1,7 @@
 # Public entry point: the Application Load Balancer.
 resource "aws_security_group" "alb" {
   name        = "uptimekuma-alb-sg"
-  description = "Allow public HTTP and HTTPS traffic to the ALB"
+  description = "Allow temporary public HTTP access to the ALB"
   vpc_id      = aws_vpc.main.id
 
   tags = {
@@ -27,16 +27,6 @@ resource "aws_vpc_security_group_ingress_rule" "alb_http" {
   cidr_ipv4         = "0.0.0.0/0"
   from_port         = 80
   to_port           = 80
-  ip_protocol       = "tcp"
-}
-
-# Public HTTPS access to the ALB.
-resource "aws_vpc_security_group_ingress_rule" "alb_https" {
-  security_group_id = aws_security_group.alb.id
-  description       = "Public HTTPS access"
-  cidr_ipv4         = "0.0.0.0/0"
-  from_port         = 443
-  to_port           = 443
   ip_protocol       = "tcp"
 }
 
