@@ -13,6 +13,8 @@ Use the AWS Console's current provider setup flow rather than copying an old cer
 
 ## 2. Create the trust roles
 
+**Important for this repository:** it was created after 15 July 2026, so GitHub's default immutable subject format includes the numeric owner and repository IDs. Use the exact subject strings below; the older name-only format will not match this repository's default tokens. GitHub documents this change in its [AWS OIDC guide](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-aws).
+
 Account: `REPLACE_WITH_AWS_ACCOUNT_ID`  
 Region: `eu-west-1`  
 Repository: `Pedro-Martins9/uptimekuma-aws-deployment`  
@@ -33,7 +35,7 @@ Create role `uptimekuma-github-terraform-plan` with web identity as its trusted 
       "Condition": {
         "StringEquals": {
           "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
-          "token.actions.githubusercontent.com:sub": "repo:Pedro-Martins9/uptimekuma-aws-deployment:ref:refs/heads/main"
+          "token.actions.githubusercontent.com:sub": "repo:Pedro-Martins9@151472460/uptimekuma-aws-deployment@1417298757:ref:refs/heads/main"
         }
       }
     }
@@ -44,7 +46,7 @@ Create role `uptimekuma-github-terraform-plan` with web identity as its trusted 
 Create role `uptimekuma-github-terraform-apply` with the same structure, but change the subject condition to:
 
 ```json
-"token.actions.githubusercontent.com:sub": "repo:Pedro-Martins9/uptimekuma-aws-deployment:environment:aws-deploy"
+"token.actions.githubusercontent.com:sub": "repo:Pedro-Martins9@151472460/uptimekuma-aws-deployment@1417298757:environment:aws-deploy"
 ```
 
 Do not use wildcard repository subjects. The plan workflow runs only on `main`; the apply job uses the `aws-deploy` GitHub Environment, so GitHub emits the Environment subject for it.
