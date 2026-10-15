@@ -3,6 +3,14 @@ name: Terraform deployment
 on:
   workflow_dispatch:
     inputs:
+      target:
+        description: "Select the Terraform root to plan or deploy"
+        required: true
+        type: choice
+        options:
+          - application
+          - backup-infra
+        default: application
       mode:
         description: "Plan only, or request an apply"
         required: true
@@ -21,7 +29,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: uptimekuma-terraform-main
+  group: uptimekuma-terraform-${{ inputs.target }}
   cancel-in-progress: false
 
 jobs:
@@ -32,6 +40,8 @@ jobs:
     permissions:
       contents: read
       id-token: write
+    env:
+      TF_ROOT: ${{ inputs.target == 'backup-infra' && 'terraform/backup-infra' || 'terraform' }}
     steps:
       - name: Checkout the selected main-branch commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -56,22 +66,19 @@ jobs:
       - name: Verify AWS identity
         run: aws sts get-caller-identity
 
-      - name: Initialize Terraform backend
-        working-directory: terraform
-        run: terraform init -input=false -lockfile=readonly
+      - name: Initialize selected Terraform backend
+        run: terraform -chdir="$TF_ROOT" init -input=false -lockfile=readonly
 
       - name: Create saved plan
-        working-directory: terraform
         env:
-          TF_VAR_alert_email: ${{ vars.ALERT_EMAIL }}
-        run: terraform plan -input=false -no-color -out="$RUNNER_TEMP/tfplan"
+          TF_VAR_alert_email: ${{ inputs.target == 'application' && vars.ALERT_EMAIL || '' }}
+        run: terraform -chdir="$TF_ROOT" plan -input=false -no-color -out="$RUNNER_TEMP/tfplan"
 
       - name: Write plan summary
-        working-directory: terraform
         shell: bash
         run: |
           set -euo pipefail
-          terraform show -no-color "$RUNNER_TEMP/tfplan" > "$RUNNER_TEMP/tfplan-review.txt"
+          terraform -chdir="$TF_ROOT" show -no-color "$RUNNER_TEMP/tfplan" > "$RUNNER_TEMP/tfplan-review.txt"
           {
             echo "## Terraform plan"
             echo
@@ -100,6 +107,8 @@ jobs:
     permissions:
       contents: read
       id-token: write
+    env:
+      TF_ROOT: ${{ inputs.target == 'backup-infra' && 'terraform/backup-infra' || 'terraform' }}
     steps:
       - name: Checkout the same commit used for planning
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -130,10 +139,8 @@ jobs:
       - name: Verify AWS identity
         run: aws sts get-caller-identity
 
-      - name: Initialize Terraform backend
-        working-directory: terraform
-        run: terraform init -input=false -lockfile=readonly
+      - name: Initialize selected Terraform backend
+        run: terraform -chdir="$TF_ROOT" init -input=false -lockfile=readonly
 
       - name: Apply only the saved plan produced earlier in this run
-        working-directory: terraform
-        run: terraform apply -input=false "$RUNNER_TEMP/tfplan-artifact/tfplan"
+        run: terraform -chdir="$TF_ROOT" apply -input=false "$RUNNER_TEMP/tfplan-artifact/tfplan"
