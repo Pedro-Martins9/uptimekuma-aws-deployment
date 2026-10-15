@@ -262,6 +262,8 @@ In **Settings → Secrets and variables → Actions → Variables**, add:
 - `ALERT_EMAIL`: optional email address that should receive alarm notifications.
 - `ALB_ALLOWED_CLIENT_CIDR`: your current public IPv4 address in `/32` notation. Get the address with `curl -4 https://checkip.amazonaws.com`, then append `/32` before saving it. Do not use `0.0.0.0/0`. If your public IP changes, update this variable and run a new plan.
 
+The **Terraform deployment** workflow also has an optional `allowed_client_ipv4_cidr` input when you manually run it. Enter your current IPv4 address followed by `/32` there to override the repository variable for that run. The direct input takes precedence. If you recently edited a variable, start a **new workflow run** after saving it rather than re-running an old failed run.
+
 In **Settings → Secrets and variables → Actions → Secrets**, add `TFPLAN_ENCRYPTION_KEY`. Generate a strong random value locally (for example, with `openssl rand -base64 48`), store it in a password manager, then add the same value as the GitHub Actions secret. **Never commit or paste this value into issues, logs, or chat.** The deployment workflow encrypts the saved Terraform plan because this portfolio repository is public; only the encrypted artifact is uploaded.
 
 In **Settings → Environments**, create `aws-deploy` and allow deployments from `main`. Configure at least one **Required reviewer**. The apply job will be held by GitHub until the environment is approved; branch restrictions alone do not pause a deployment. Add this environment variable:
