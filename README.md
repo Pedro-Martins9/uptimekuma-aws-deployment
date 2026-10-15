@@ -67,7 +67,7 @@ flowchart TB
 
 The ECS task definition declares container port **3001** and host port **0**. ECS selected host port **32768** during the test and registered that port with the ALB target group. The configured security-group range is TCP **32768–65535**, while the instance's verified ephemeral range was **32768–60999**.
 
-**TLS status:** the tested setup had an HTTP listener only. The ALB security group allowed port 443, but there was no HTTPS listener or ACM certificate. Do not enter sensitive credentials over the HTTP endpoint. Before real use, configure a domain, ACM certificate, HTTPS listener and HTTP-to-HTTPS redirect, or remove the unused 443 rule until TLS is ready.
+**TLS status:** this temporary test uses the ALB-generated AWS DNS name over HTTP only. There is no HTTPS listener or certificate, and the unused public 443 security-group rule has been removed. Do not enter reusable credentials or sensitive information through this endpoint. Before real use, configure a domain, ACM certificate, HTTPS listener and HTTP-to-HTTPS redirect, or keep the admin interface private.
 
 ## Component breakdown
 
@@ -78,7 +78,7 @@ The ECS task definition declares container port **3001** and host port **0**. EC
 - Public subnet 2: `10.20.2.0/24`, `eu-west-1b`.
 - Internet Gateway, public route table, and default route to the Internet Gateway.
 - Internet-facing ALB in both public subnets.
-- ALB security group accepts public TCP 80/443; ALB forwards to the ECS instance security group on the dynamic host-port range.
+- Temporary test endpoint: the ALB accepts public TCP 80 only and forwards to the ECS instance security group on the dynamic host-port range. The ALB-generated DNS name is plain HTTP; do not submit reusable credentials or sensitive information. Restrict this rule to a trusted client CIDR before leaving the stack running, or use a private access method.
 - ECS instance security group accepts application traffic only from the ALB security group. It does not allow SSH or direct public inbound application access.
 - EC2 egress permits TCP 80 and 443 for monitored websites, image pulls and AWS API access.
 - Systems Manager is the administration path, so no inbound SSH rule is needed.
@@ -93,6 +93,7 @@ Public subnets avoid NAT Gateway charges in this learning-oriented design. A fut
 - EC2 launch template: recommended ECS-optimized Amazon Linux 2023 AMI obtained through an SSM public parameter; instance type `t3.small`.
 - Task resources: 256 CPU units and 512 MiB memory.
 - Task network mode: `bridge`; container port 3001 and dynamic host-port assignment.
+- The task image is pinned to the upstream `louislam/uptime-kuma:2.5.6` release rather than a moving major-version tag. Verify upstream releases before future upgrades.
 - Application data mount: container `/app/data` to host `/var/lib/uptimekuma`.
 
 ECS on EC2 was chosen to learn both orchestration and the capacity layer, rather than outsource compute to Fargate.
