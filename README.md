@@ -67,7 +67,7 @@ flowchart TB
 
 The ECS task definition declares container port **3001** and host port **0**. ECS selected host port **32768** during the test and registered that port with the ALB target group. The configured security-group range is TCP **32768–65535**, while the instance's verified ephemeral range was **32768–60999**.
 
-**TLS status:** this temporary test uses the ALB-generated AWS DNS name over HTTP only. There is no HTTPS listener or certificate, and the unused public 443 security-group rule has been removed. Do not enter reusable credentials or sensitive information through this endpoint. Before real use, configure a domain, ACM certificate, HTTPS listener and HTTP-to-HTTPS redirect, or keep the admin interface private.
+**TLS status:** this temporary test uses the ALB-generated AWS DNS name over HTTP only, restricted to a configured trusted IPv4 /32. There is no HTTPS listener or certificate, and the unused public 443 security-group rule has been removed. Do not enter reusable credentials or sensitive information through this endpoint. Before real use, configure a domain, ACM certificate, HTTPS listener and HTTP-to-HTTPS redirect, or keep the admin interface private.
 
 ## Component breakdown
 
@@ -78,7 +78,7 @@ The ECS task definition declares container port **3001** and host port **0**. EC
 - Public subnet 2: `10.20.2.0/24`, `eu-west-1b`.
 - Internet Gateway, public route table, and default route to the Internet Gateway.
 - Internet-facing ALB in both public subnets.
-- Temporary test endpoint: the ALB accepts public TCP 80 only and forwards to the ECS instance security group on the dynamic host-port range. The ALB-generated DNS name is plain HTTP; do not submit reusable credentials or sensitive information. Restrict this rule to a trusted client CIDR before leaving the stack running, or use a private access method.
+- Temporary test endpoint: the ALB accepts TCP 80 only from the operator-configured public IPv4 /32 in GitHub Actions variable `ALB_ALLOWED_CLIENT_CIDR`, and forwards to the ECS instance security group on the dynamic host-port range. The ALB-generated DNS name is plain HTTP; do not submit reusable credentials or sensitive information. Update the allowlist when your public IP changes, and remove public access or destroy the app stack when the test is finished.
 - ECS instance security group accepts application traffic only from the ALB security group. It does not allow SSH or direct public inbound application access.
 - EC2 egress permits TCP 80 and 443 for monitored websites, image pulls and AWS API access.
 - Systems Manager is the administration path, so no inbound SSH rule is needed.
