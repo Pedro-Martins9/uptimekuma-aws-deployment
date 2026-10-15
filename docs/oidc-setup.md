@@ -124,7 +124,9 @@ Save the JSON below as `uptimekuma-terraform-apply` and attach it only to `uptim
         "ec2:CreateSecurityGroup", "ec2:DeleteSecurityGroup",
         "ec2:AuthorizeSecurityGroupIngress", "ec2:AuthorizeSecurityGroupEgress",
         "ec2:RevokeSecurityGroupIngress", "ec2:RevokeSecurityGroupEgress",
-        "ec2:CreateLaunchTemplate", "ec2:DeleteLaunchTemplate",
+        "ec2:CreateLaunchTemplate", "ec2:CreateLaunchTemplateVersion",
+        "ec2:ModifyLaunchTemplate", "ec2:DeleteLaunchTemplateVersions",
+        "ec2:DeleteLaunchTemplate",
         "ec2:CreateTags", "ec2:DeleteTags"
       ],
       "Resource": "*"
@@ -159,7 +161,8 @@ Save the JSON below as `uptimekuma-terraform-apply` and attach it only to `uptim
         "autoscaling:CreateAutoScalingGroup", "autoscaling:UpdateAutoScalingGroup",
         "autoscaling:DeleteAutoScalingGroup", "autoscaling:DescribeAutoScalingGroups",
         "autoscaling:DescribeScalingActivities", "autoscaling:DescribePolicies",
-        "autoscaling:CreateOrUpdateTags", "autoscaling:DeleteTags"
+        "autoscaling:CreateOrUpdateTags", "autoscaling:DeleteTags",
+        "autoscaling:EnableMetricsCollection", "autoscaling:DisableMetricsCollection"
       ],
       "Resource": "*"
     },
@@ -173,6 +176,7 @@ Save the JSON below as `uptimekuma-terraform-apply` and attach it only to `uptim
         "cloudwatch:PutMetricAlarm", "cloudwatch:DeleteAlarms",
         "cloudwatch:DescribeAlarms", "cloudwatch:ListMetrics",
         "cloudwatch:GetMetricData", "cloudwatch:GetMetricStatistics",
+        "cloudwatch:TagResource", "cloudwatch:UntagResource",
         "sns:CreateTopic", "sns:DeleteTopic", "sns:Subscribe", "sns:Unsubscribe",
         "sns:GetTopicAttributes", "sns:SetTopicAttributes",
         "sns:ListTagsForResource", "sns:TagResource", "sns:UntagResource"
@@ -186,7 +190,8 @@ Save the JSON below as `uptimekuma-terraform-apply` and attach it only to `uptim
         "ssm:CreateAssociation", "ssm:UpdateAssociation", "ssm:DeleteAssociation",
         "ssm:DescribeAssociation", "ssm:DescribeAssociationExecutions",
         "ssm:DescribeAssociationExecutionTargets", "ssm:ListAssociations",
-        "ssm:ListAssociationVersions", "ssm:GetParameter"
+        "ssm:ListAssociationVersions", "ssm:GetParameter",
+        "ssm:AddTagsToResource", "ssm:RemoveTagsFromResource", "ssm:ListTagsForResource"
       ],
       "Resource": "*"
     },
