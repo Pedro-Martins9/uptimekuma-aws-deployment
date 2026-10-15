@@ -219,6 +219,7 @@ Save the JSON below as `uptimekuma-terraform-apply` and attach it only to `uptim
       "Effect": "Allow",
       "Action": [
         "s3:CreateBucket",
+        "s3:GetBucketAcl",
         "s3:PutBucketVersioning", "s3:GetBucketVersioning",
         "s3:PutEncryptionConfiguration", "s3:GetEncryptionConfiguration",
         "s3:PutBucketPublicAccessBlock", "s3:GetBucketPublicAccessBlock",
@@ -262,11 +263,12 @@ In **Settings → Secrets and variables → Actions → Variables**, add:
 
 In **Settings → Secrets and variables → Actions → Secrets**, add `TFPLAN_ENCRYPTION_KEY`. Generate a strong random value locally (for example, with `openssl rand -base64 48`), store it in a password manager, then add the same value as the GitHub Actions secret. **Never commit or paste this value into issues, logs, or chat.** The deployment workflow encrypts the saved Terraform plan because this portfolio repository is public; only the encrypted artifact is uploaded.
 
-In **Settings → Environments**, create `aws-deploy`, allow deployments from `main`, and configure required reviewers if that feature is available for the repository/account plan. Add environment variable:
+In **Settings → Environments**, create `aws-deploy` and allow deployments from `main`. Configure at least one **Required reviewer**. The apply job will be held by GitHub until the environment is approved; branch restrictions alone do not pause a deployment. Add these environment variables:
 
 - `AWS_TERRAFORM_APPLY_ROLE_ARN`: `arn:aws:iam::REPLACE_WITH_AWS_ACCOUNT_ID:role/uptimekuma-terraform-apply`.
+- `TERRAFORM_APPLY_GATE_CONFIGURED`: set to `YES` **only after** verifying the environment has a required reviewer and the main branch restriction. The workflow fails closed if this variable is missing or has another value. This is a configuration guard in addition to GitHub's actual environment protection rule, not a replacement for it.
 
-The plan-review artifact is named `terraform-plan-encrypted` and expires after one day. To inspect it, download it from the workflow run, set the same `TFPLAN_ENCRYPTION_KEY` value in your local shell (without committing it), decrypt with OpenSSL using AES-256-CBC/PBKDF2 and 600,000 iterations, extract the archive, then run `terraform show -no-color tfplan` from the matching checked-out commit. Do not choose `deploy` until you have reviewed the decrypted plan.
+The plan-review artifact is named `terraform-plan-encrypted` and expires after one day. To inspect it, download it from the workflow run, set the same `TFPLAN_ENCRYPTION_KEY` value in your local shell (without committing it), decrypt with OpenSSL using AES-256-CBC/PBKDF2 and 600,000 iterations, extract the archive, then inspect `tfplan-review.txt` from the matching run. Approve the GitHub environment deployment only after reviewing that plan.
 
 The email address is not an AWS credential. The SNS subscription remains pending until its confirmation link is accepted. The deploy workflow passes `ALERT_EMAIL` into Terraform as `TF_VAR_alert_email`; leave it empty if you are doing validation only and do not want an SNS subscription.
 
@@ -275,7 +277,7 @@ The email address is not an AWS credential. The SNS subscription remains pending
 1. Run **Terraform validation** and make sure formatting and validation pass for the main, state-bootstrap and backup-infrastructure directories.
 2. From Actions, manually dispatch **Terraform deployment** on `main` with mode `plan`. Confirm it assumes the plan role and produces a plan without changing resources.
 3. Review the plan artifact and summary. Plan artifacts may contain sensitive values; the workflow is configured for a private repository and one-day retention.
-4. First select target `backup-infra` and mode `plan`. Review the plan; then, deliberately, select target `backup-infra`, mode `deploy`, and type `DEPLOY` to create the persistent application-backup bucket.
+4. Configure the `aws-deploy` environment's required reviewer before enabling `TERRAFORM_APPLY_GATE_CONFIGURED=YES`. Select target `backup-infra` and mode `plan` first. Review the plan; then select target `backup-infra`, mode `deploy`, and type `DEPLOY`. The apply job must pause for environment approval after the plan is created.
 5. Run the workflow again with target `application` and mode `plan`; review the entire plan. Only choose `deploy` with typed confirmation `DEPLOY` for a deliberate application test.
 6. Verify the expected AWS account in the `aws sts get-caller-identity` step.
 7. Destroy the test stack manually only after inspecting `terraform plan -destroy`. There is no automated destroy job.
