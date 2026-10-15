@@ -20,7 +20,7 @@ Region: `eu-west-1`
 Repository: `Pedro-Martins9/uptimekuma-aws-deployment`  
 OIDC provider ARN: `arn:aws:iam::REPLACE_WITH_AWS_ACCOUNT_ID:oidc-provider/token.actions.githubusercontent.com`
 
-Create role `uptimekuma-github-terraform-plan` with web identity as its trusted entity. Its trust relationship should restrict both audience and subject:
+Create role `uptimekuma-terraform-plan` with web identity as its trusted entity. Its trust relationship should restrict both audience and subject:
 
 ```json
 {
@@ -43,7 +43,7 @@ Create role `uptimekuma-github-terraform-plan` with web identity as its trusted 
 }
 ```
 
-Create role `uptimekuma-github-terraform-apply` with the same structure, but change the subject condition to:
+Create role `uptimekuma-terraform-apply` with the same structure, but change the subject condition to:
 
 ```json
 "token.actions.githubusercontent.com:sub": "repo:Pedro-Martins9@151472460/uptimekuma-aws-deployment@1417298757:environment:aws-deploy"
@@ -104,7 +104,7 @@ The S3 write/delete scope is needed for Terraform to save state and acquire/rele
 
 Keep the plan role read-only apart from the state/lock object access. For the apply role, attach an inline policy for the main application root plus the S3 operations needed to create/configure the separate application-backup bucket. This is a **portfolio-sandbox starting policy, not a guarantee of least privilege for every future edit**. Review the resource scope and AWS AccessDenied results before using it in an account containing unrelated workloads. Both roles also need the state policy in section 3.
 
-Save the JSON below as `uptimekuma-terraform-apply` and attach it only to `uptimekuma-github-terraform-apply`:
+Save the JSON below as `uptimekuma-terraform-apply` and attach it only to `uptimekuma-terraform-apply`:
 
 ```json
 {
@@ -257,12 +257,16 @@ Some create APIs and tagging operations do not support full resource scoping in 
 
 In **Settings → Secrets and variables → Actions → Variables**, add:
 
-- `AWS_TERRAFORM_PLAN_ROLE_ARN`: ARN of `uptimekuma-github-terraform-plan`.
+- `AWS_TERRAFORM_PLAN_ROLE_ARN`: `arn:aws:iam::REPLACE_WITH_AWS_ACCOUNT_ID:role/uptimekuma-terraform-plan`.
 - `ALERT_EMAIL`: optional email address that should receive alarm notifications.
+
+In **Settings → Secrets and variables → Actions → Secrets**, add `TFPLAN_ENCRYPTION_KEY`. Generate a strong random value locally (for example, with `openssl rand -base64 48`), store it in a password manager, then add the same value as the GitHub Actions secret. **Never commit or paste this value into issues, logs, or chat.** The deployment workflow encrypts the saved Terraform plan because this portfolio repository is public; only the encrypted artifact is uploaded.
 
 In **Settings → Environments**, create `aws-deploy`, allow deployments from `main`, and configure required reviewers if that feature is available for the repository/account plan. Add environment variable:
 
-- `AWS_TERRAFORM_APPLY_ROLE_ARN`: ARN of `uptimekuma-github-terraform-apply`.
+- `AWS_TERRAFORM_APPLY_ROLE_ARN`: `arn:aws:iam::REPLACE_WITH_AWS_ACCOUNT_ID:role/uptimekuma-terraform-apply`.
+
+The plan-review artifact is named `terraform-plan-encrypted` and expires after one day. To inspect it, download it from the workflow run, set the same `TFPLAN_ENCRYPTION_KEY` value in your local shell (without committing it), decrypt with OpenSSL using AES-256-CBC/PBKDF2 and 600,000 iterations, extract the archive, then run `terraform show -no-color tfplan` from the matching checked-out commit. Do not choose `deploy` until you have reviewed the decrypted plan.
 
 The email address is not an AWS credential. The SNS subscription remains pending until its confirmation link is accepted. The deploy workflow passes `ALERT_EMAIL` into Terraform as `TF_VAR_alert_email`; leave it empty if you are doing validation only and do not want an SNS subscription.
 
