@@ -126,6 +126,17 @@ jobs:
       TF_ROOT: ${{ inputs.target == 'backup-infra' && 'terraform/backup-infra' || 'terraform' }}
       TFPLAN_ENCRYPTION_KEY: ${{ secrets.TFPLAN_ENCRYPTION_KEY }}
     steps:
+      - name: Fail closed unless environment approval gate is explicitly enabled
+        shell: bash
+        env:
+          TERRAFORM_APPLY_GATE_CONFIGURED: ${{ vars.TERRAFORM_APPLY_GATE_CONFIGURED }}
+        run: |
+          set -euo pipefail
+          if [[ "${TERRAFORM_APPLY_GATE_CONFIGURED:-}" != "YES" ]]; then
+            echo "::error::Apply disabled. First configure a required reviewer for the aws-deploy GitHub Environment and restrict deployments to main, then set its TERRAFORM_APPLY_GATE_CONFIGURED variable to YES."
+            exit 1
+          fi
+
       - name: Checkout the same commit used for planning
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
