@@ -5,11 +5,11 @@ on:
     branches: [main]
     paths:
       - "terraform/**"
-      - ".github/workflows/terraform-validate.yml"
+      - ".github/workflows/**"
   pull_request:
     paths:
       - "terraform/**"
-      - ".github/workflows/terraform-validate.yml"
+      - ".github/workflows/**"
   workflow_dispatch:
 
 permissions:
