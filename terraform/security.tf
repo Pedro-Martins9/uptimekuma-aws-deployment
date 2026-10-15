@@ -23,8 +23,8 @@ resource "aws_security_group" "ecs_instances" {
 # Public HTTP access to the ALB.
 resource "aws_vpc_security_group_ingress_rule" "alb_http" {
   security_group_id = aws_security_group.alb.id
-  description       = "Public HTTP access"
-  cidr_ipv4         = "0.0.0.0/0"
+  description       = "HTTP access from the configured trusted client IPv4 address"
+  cidr_ipv4         = var.allowed_client_ipv4_cidr
   from_port         = 80
   to_port           = 80
   ip_protocol       = "tcp"
