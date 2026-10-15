@@ -87,18 +87,20 @@ Replace account or bucket names only if the deployment is intentionally moved to
       ],
       "Resource": [
         "arn:aws:s3:::REPLACE_WITH_EXISTING_TFSTATE_BUCKET/uptimekuma/terraform.tfstate",
-        "arn:aws:s3:::REPLACE_WITH_EXISTING_TFSTATE_BUCKET/uptimekuma/terraform.tfstate.tflock"
+        "arn:aws:s3:::REPLACE_WITH_EXISTING_TFSTATE_BUCKET/uptimekuma/terraform.tfstate.tflock",
+        "arn:aws:s3:::REPLACE_WITH_EXISTING_TFSTATE_BUCKET/uptimekuma/backup-infra.tfstate",
+        "arn:aws:s3:::REPLACE_WITH_EXISTING_TFSTATE_BUCKET/uptimekuma/backup-infra.tfstate.tflock"
       ]
     }
   ]
 }
 ```
 
-The S3 write/delete scope is needed for Terraform to save state and acquire/release the S3 native lock file. Do not add access to the bootstrap state's local file or broad bucket deletion permissions.
+The S3 write/delete scope is needed for Terraform to save state and acquire/release the S3 native lock file. The policy includes both application and backup-infrastructure state keys because the workflow can target either root. Do not add access to the bootstrap's local state or broad bucket deletion permissions.
 
 ### Apply-role resource permissions
 
-Keep the plan role read-only apart from the state/lock object access. For the apply role, attach a second inline policy that allows the writes used by the main `terraform/` root. The following is a **portfolio-sandbox starting policy, not a guarantee of least privilege for every future edit**. It enumerates write actions used by the current configuration; review the resource scope and AWS AccessDenied results before using it in an account containing unrelated workloads. Both roles also need the state policy in section 3.
+Keep the plan role read-only apart from the state/lock object access. For the apply role, attach an inline policy for the main application root plus the S3 operations needed to create/configure the separate application-backup bucket. This is a **portfolio-sandbox starting policy, not a guarantee of least privilege for every future edit**. Review the resource scope and AWS AccessDenied results before using it in an account containing unrelated workloads. Both roles also need the state policy in section 3.
 
 Save the JSON below as `uptimekuma-terraform-apply` and attach it only to `uptimekuma-github-terraform-apply`:
 
@@ -206,6 +208,22 @@ Save the JSON below as `uptimekuma-terraform-apply` and attach it only to `uptim
       ]
     },
     {
+      "Sid": "ManageOnlyApplicationBackupBucket",
+      "Effect": "Allow",
+      "Action": [
+        "s3:CreateBucket",
+        "s3:PutBucketVersioning", "s3:GetBucketVersioning",
+        "s3:PutEncryptionConfiguration", "s3:GetEncryptionConfiguration",
+        "s3:PutBucketPublicAccessBlock", "s3:GetBucketPublicAccessBlock",
+        "s3:PutBucketPolicy", "s3:GetBucketPolicy",
+        "s3:PutLifecycleConfiguration", "s3:GetLifecycleConfiguration",
+        "s3:PutBucketTagging", "s3:GetBucketTagging",
+        "s3:GetBucketLocation", "s3:ListBucket",
+        "s3:ListBucketVersions", "s3:ListBucketMultipartUploads"
+      ],
+      "Resource": "arn:aws:s3:::REPLACE_WITH_APP_BACKUP_BUCKET"
+    },
+    {
       "Sid": "PassOnlyProjectRuntimeRoles",
       "Effect": "Allow",
       "Action": "iam:PassRole",
@@ -246,8 +264,9 @@ The email address is not an AWS credential. The SNS subscription remains pending
 1. Run **Terraform validation** and make sure formatting and validation pass for the main, state-bootstrap and backup-infrastructure directories.
 2. From Actions, manually dispatch **Terraform deployment** on `main` with mode `plan`. Confirm it assumes the plan role and produces a plan without changing resources.
 3. Review the plan artifact and summary. Plan artifacts may contain sensitive values; the workflow is configured for a private repository and one-day retention.
-4. Only for a deliberate test deployment, select mode `deploy`, type `DEPLOY`, and let the `aws-deploy` Environment gate run before apply.
-5. Verify the expected AWS account in the `aws sts get-caller-identity` step.
-6. Destroy the test stack manually only after inspecting `terraform plan -destroy`. There is no automated destroy job.
+4. First select target `backup-infra` and mode `plan`. Review the plan; then, deliberately, select target `backup-infra`, mode `deploy`, and type `DEPLOY` to create the persistent application-backup bucket.
+5. Run the workflow again with target `application` and mode `plan`; review the entire plan. Only choose `deploy` with typed confirmation `DEPLOY` for a deliberate application test.
+6. Verify the expected AWS account in the `aws sts get-caller-identity` step.
+7. Destroy the test stack manually only after inspecting `terraform plan -destroy`. There is no automated destroy job.
 
 The AWS-side trust provider and IAM roles must be created before this workflow can get credentials. A green YAML validation run alone does not prove OIDC trust or an AWS apply works.
