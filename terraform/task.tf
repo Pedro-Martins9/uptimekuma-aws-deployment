@@ -18,7 +18,7 @@ resource "aws_ecs_task_definition" "uptimekuma" {
   container_definitions = jsonencode([
     {
       name      = "uptimekuma"
-      image     = "louislam/uptime-kuma:1"
+      image     = "louislam/uptime-kuma:2.5.6"
       essential = true
 
       portMappings = [
