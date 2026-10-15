@@ -78,7 +78,7 @@ The ECS task definition declares container port **3001** and host port **0**. EC
 - Public subnet 2: `10.20.2.0/24`, `eu-west-1b`.
 - Internet Gateway, public route table, and default route to the Internet Gateway.
 - Internet-facing ALB in both public subnets.
-- Temporary test endpoint: the ALB accepts TCP 80 only from the operator-configured public IPv4 /32 in GitHub Actions variable `ALB_ALLOWED_CLIENT_CIDR`, and forwards to the ECS instance security group on the dynamic host-port range. The ALB-generated DNS name is plain HTTP; do not submit reusable credentials or sensitive information. Update the allowlist when your public IP changes, and remove public access or destroy the app stack when the test is finished.
+- Temporary test endpoint: the ALB accepts TCP 80 only from the operator-configured public IPv4 /32 in GitHub Actions variable `ALB_ALLOWED_CLIENT_CIDR` (or the optional `allowed_client_ipv4_cidr` workflow-dispatch override), and forwards to the ECS instance security group on the dynamic host-port range. The ALB-generated DNS name is plain HTTP; do not submit reusable credentials or sensitive information. Update the allowlist when your public IP changes, and remove public access or destroy the app stack when the test is finished.
 - ECS instance security group accepts application traffic only from the ALB security group. It does not allow SSH or direct public inbound application access.
 - EC2 egress permits TCP 80 and 443 for monitored websites, image pulls and AWS API access.
 - Systems Manager is the administration path, so no inbound SSH rule is needed.
