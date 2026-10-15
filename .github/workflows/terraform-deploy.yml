@@ -72,6 +72,7 @@ jobs:
       - name: Create saved plan
         env:
           TF_VAR_alert_email: ${{ inputs.target == 'application' && vars.ALERT_EMAIL || '' }}
+          TF_VAR_allowed_client_ipv4_cidr: ${{ inputs.target == 'application' && vars.ALB_ALLOWED_CLIENT_CIDR || '' }}
         run: terraform -chdir="$TF_ROOT" plan -input=false -no-color -out="$RUNNER_TEMP/tfplan"
 
       - name: Write plan review and summary
