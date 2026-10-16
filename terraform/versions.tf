@@ -10,7 +10,7 @@ terraform {
   }
 
   backend "s3" {
-    bucket       = "<TFSTATE_BUCKET>"
+    bucket       = "REPLACE_WITH_EXISTING_TFSTATE_BUCKET"
     key          = "uptimekuma/terraform.tfstate"
     region       = "eu-west-1"
     encrypt      = true
