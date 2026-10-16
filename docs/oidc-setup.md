@@ -115,6 +115,7 @@ Save the JSON below as `uptimekuma-terraform-apply` and attach it only to `uptim
       "Effect": "Allow",
       "Action": [
         "ec2:Describe*",
+        "ec2:RunInstances",
         "ec2:CreateVpc", "ec2:DeleteVpc", "ec2:ModifyVpcAttribute",
         "ec2:CreateSubnet", "ec2:DeleteSubnet", "ec2:ModifySubnetAttribute",
         "ec2:CreateInternetGateway", "ec2:DeleteInternetGateway",
@@ -137,9 +138,11 @@ Save the JSON below as `uptimekuma-terraform-apply` and attach it only to `uptim
       "Effect": "Allow",
       "Action": [
         "elasticloadbalancing:CreateLoadBalancer", "elasticloadbalancing:DeleteLoadBalancer",
-        "elasticloadbalancing:DescribeLoadBalancers",
+        "elasticloadbalancing:DescribeLoadBalancers", "elasticloadbalancing:DescribeLoadBalancerAttributes",
+        "elasticloadbalancing:ModifyLoadBalancerAttributes",
         "elasticloadbalancing:CreateTargetGroup", "elasticloadbalancing:DeleteTargetGroup",
-        "elasticloadbalancing:DescribeTargetGroups", "elasticloadbalancing:DescribeTargetHealth",
+        "elasticloadbalancing:DescribeTargetGroups", "elasticloadbalancing:DescribeTargetGroupAttributes",
+        "elasticloadbalancing:ModifyTargetGroupAttributes", "elasticloadbalancing:DescribeTargetHealth",
         "elasticloadbalancing:CreateListener", "elasticloadbalancing:DeleteListener",
         "elasticloadbalancing:DescribeListeners", "elasticloadbalancing:ModifyListener",
         "elasticloadbalancing:DescribeTags", "elasticloadbalancing:AddTags",
@@ -253,7 +256,7 @@ Save the JSON below as `uptimekuma-terraform-apply` and attach it only to `uptim
 }
 ```
 
-The latest failed apply exposed missing permissions for `ec2:DescribeVpcs` and `cloudwatch:ListTagsForResource`. The example policy grants the read-only EC2 Describe API family using `ec2:Describe*` with `Resource: "*"`; AWS documents that EC2 Describe APIs do not support resource-level permissions. Do not add `ec2:DescribeSubnetAttribute`: it is not a valid action in the EC2 Service Authorization Reference. `cloudwatch:ListTagsForResource` is a valid CloudWatch IAM action and is included in the alarm/notification statement. If the live role was configured from an earlier version of this guide, update its inline policy in IAM as well; changing this file does not change permissions in AWS. Also verify that the `ReadOnlyAccess` managed policy is actually attached to the live apply role, as intended.
+Recent apply errors also showed missing `ec2:RunInstances`, `elasticloadbalancing:ModifyLoadBalancerAttributes`, and `elasticloadbalancing:ModifyTargetGroupAttributes`. These actions are now included in the example policy, along with the matching ELB attribute describe actions. AWS documents that Auto Scaling validates launch-template usage against `ec2:RunInstances`, `ec2:CreateTags`, and `iam:PassRole`; the policy has `ec2:RunInstances` and `ec2:CreateTags`, and the pass-role statement should allow the ECS instance role to be passed to `ec2.amazonaws.com`. The EC2 Describe API family is granted with `ec2:Describe*` and `Resource: "*"`; don't add `ec2:DescribeSubnetAttribute`, which is not a valid EC2 IAM action. `cloudwatch:ListTagsForResource` is included for the earlier alarm-tag read error. If the live role was configured from an earlier version of this guide, update its inline policy in IAM as well; changing this file does not change permissions in AWS. Verify `ReadOnlyAccess` is actually attached to the apply role.
 
 Some create APIs and tagging operations do not support full resource scoping in the same way as update/delete APIs; the example uses `Resource: "*"` for several service groups. That is a trade-off, not perfect least privilege. For a shared or production account, split statements and restrict resources by ARN, request tags or existing tags wherever supported. Do not use this starter policy as a substitute for a policy review. The managed `ReadOnlyAccess` policy plus the state policy from section 3 remains on each role.
 
