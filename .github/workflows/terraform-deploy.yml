@@ -64,9 +64,10 @@ jobs:
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           role-to-assume: ${{ vars.AWS_TERRAFORM_PLAN_ROLE_ARN }}
+          # Configure AWS_ACCOUNT_ID as a repository variable; no AWS account ID is embedded here.
           role-session-name: gha-terraform-plan-${{ github.run_id }}
           aws-region: eu-west-1
-          allowed-account-ids: "${{ vars.AWS_ACCOUNT_ID }}"
+          allowed-account-ids: ${{ vars.AWS_ACCOUNT_ID }}
 
       - name: Verify AWS identity
         run: aws sts get-caller-identity
@@ -170,9 +171,10 @@ jobs:
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           role-to-assume: ${{ vars.AWS_TERRAFORM_APPLY_ROLE_ARN }}
+          # Configure AWS_ACCOUNT_ID as a repository variable; no AWS account ID is embedded here.
           role-session-name: gha-terraform-apply-${{ github.run_id }}
           aws-region: eu-west-1
-          allowed-account-ids: "${{ vars.AWS_ACCOUNT_ID }}"
+          allowed-account-ids: ${{ vars.AWS_ACCOUNT_ID }}
 
       - name: Verify AWS identity
         run: aws sts get-caller-identity
