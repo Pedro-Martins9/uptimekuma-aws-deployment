@@ -36,7 +36,7 @@ These are static configuration checks. They do not deploy resources, prove alarm
 
 ## 2. Post-destroy audit — complete
 
-The operator confirmed that the post-destroy audit completed successfully: the application stack is gone, no leftover application resources were found, and the separate Terraform-state and application-backup S3 buckets persist. The application backup and freshness SSM associations were part of the destroyed application stack, so scheduled backups are not running while the app is offline.
+The operator confirmed that the post-destroy audit completed successfully: the application stack is gone, no leftover application resources were found, and the separate Terraform-state and application-backup S3 buckets persist. The commands below use placeholders for the bucket names and region. The application backup and freshness SSM associations were part of the destroyed application stack, so scheduled backups are not running while the app is offline.
 
 If you want to independently re-check the persistent buckets in future, these read-only commands are available:
 
@@ -73,8 +73,8 @@ These items are not required to describe the demonstrated restore, but should re
 - [ ] **Alarm validation:** confirm the SNS email subscription and safely trigger each meaningful CloudWatch alarm, including return to OK. Alarm resources existing in Terraform is not proof that their metric dimensions and thresholds work.
 - [ ] **Cost alerts:** add AWS Budget notifications at 50%, 80% and 100%, then verify delivery.
 - [ ] **Transport security:** the temporary ALB endpoint used HTTP restricted to a configured IPv4 /32. If operating the dashboard beyond a short test, add a domain, ACM certificate, HTTPS listener and HTTP-to-HTTPS redirect, or keep the interface private. The application is offline now.
-- [ ] **Restore evidence:** the replacement instance restored the previous wewatch monitor/history and returned healthy. Exact S3 version ID, checksum digest, SSM execution ID, direct SQLite PRAGMA integrity_check output and exact first-healthy timestamp were not captured. Do not claim a precise RPO/RTO based on the available timestamps.
-- [ ] **Recovery drill quality:** on a future test deployment, create a temporary RESTORE-DRILL-CANARY marker, save sanitized output and capture S3 version/hash/SSM execution ID plus timestamps. Run the drill before destroying the test stack.
+- [ ] **Restore evidence:** the replacement instance restored the previous monitor configuration/history and returned healthy. Exact S3 version ID, checksum digest, SSM execution ID, direct SQLite PRAGMA integrity_check output and exact first-healthy timestamp were not captured. Do not claim a precise RPO/RTO based on the available timestamps.
+- [ ] **Recovery drill quality:** on a future test deployment, create a temporary canary marker, save sanitized output and capture S3 version/hash/SSM execution ID plus timestamps. Run the drill before destroying the test stack.
 - [ ] **Teardown reliability:** the previous destroy needed intervention because the Auto Scaling Group still had capacity while ECS was draining. Document a repeatable teardown sequence and test it during a future deployment.
 - [ ] **Optional evidence:** add sanitized screenshots of the architecture, healthy target, GitHub Actions approval gate, alarm delivery and restore result. Ensure screenshots reveal no personal email addresses, credentials, or unrelated monitored endpoints.
 - [ ] **License decision:** no LICENSE file is currently tracked. Choose a license if you intend to grant others reuse rights; do not imply an open-source license that has not been selected.
