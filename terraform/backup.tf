@@ -130,7 +130,7 @@ resource "aws_ssm_association" "daily_backup" {
 resource "aws_ssm_association" "backup_freshness" {
   name                        = "AWS-RunShellScript"
   association_name            = "uptimekuma-backup-freshness-check"
-  schedule_expression         = "cron(0 * * * ? *)"
+  schedule_expression         = "cron(0 0/1 * * ? *)"
   apply_only_at_cron_interval = true
   max_concurrency             = "1"
   max_errors                  = "1"
