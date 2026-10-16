@@ -1,17 +1,18 @@
 # Public release and portfolio readiness
 
 **Review date:** 16 October 2026  
-**Repository state:** private; application stack offline after a successful deployment and restore exercise.  
+**Repository state:** private; application stack offline after successful deployment and restore testing.  
+**Completed since the initial checklist:** full-history Gitleaks scan reviewed with no findings reported; Terraform validation workflow passed; teardown audit completed successfully; the separate Terraform-state and application-backup S3 buckets were confirmed to persist.  
 **Purpose:** track the remaining work needed to publish the repository safely and present the project accurately on a CV or portfolio.
 
 ## 1. Required before changing repository visibility
 
-- [ ] **Run the full-history Gitleaks scan and review the result.** The workflow `.github/workflows/gitleaks.yml` is now configured for pushes, pull requests, daily scans and manual dispatch. In GitHub, open **Actions → Secret scanning (Gitleaks) → Run workflow**, select `main`, then review the job summary and any SARIF artifact. Manual and scheduled runs scan the complete history; push and pull-request runs scan the relevant changes. The initial full-history run has not yet been confirmed successful.
+- [x] **Run and review the full-history Gitleaks scan.** The operator confirmed the scan passed with no findings reported. The workflow `.github/workflows/gitleaks.yml` also continues to scan pushes and pull requests, with scheduled and manual runs available for broader history scans.
 - [ ] **If any credential was ever committed, treat it as exposed.** Revoke or rotate it first. Removing it from the latest tree alone does not remove it from Git history.
-- [ ] **Confirm the repository contains no real Terraform state, plan artifacts, AWS credential files, private keys, personal data or unsanitized screenshots.** Keep the .terraform.lock.hcl files; those dependency lock files are intentionally tracked.
-- [ ] **Decide whether to publish the account-specific identifiers.** The Terraform backend names, AWS account ID, bucket names, GitHub owner/repository IDs and sample IAM ARNs appear in the code/docs. These are identifiers, not AWS credentials, but they become more easily discoverable in a public repo. Generalize them if you do not want them public.
-- [ ] **Verify AWS cleanup and expected persistent storage.** The application destroy reported 19 resources destroyed, but the final audit was not confirmed in this review. See section 2.
-- [ ] **Check the current default-branch Actions results.** Confirm Gitleaks completes a manual full-history scan without unresolved findings, and Terraform formatting/validation passes for all three roots. The deployment workflow's earlier successful plan/apply is useful evidence, but does not replace a current validation run after final edits.
+- [x] **Review the current tracked file tree for sensitive artifacts.** No Terraform state files, plan files, tfvars files, private-key files or credential files are present in the current tree. Keep the .terraform.lock.hcl files; those dependency lock files are intentionally tracked. A clean scan is not a guarantee that a secret was never used or committed; rotate any real credential if there is reason to believe it was exposed.
+- [ ] **Decide whether to publish account-specific identifiers in the supporting docs.** The detailed OIDC setup documentation includes account-, repository- and bucket-specific example values. These are identifiers, not AWS credentials, but should be generalized if you do not want them exposed or want the repository to be reusable by others.
+- [x] **Complete AWS cleanup and preserve required storage.** The operator confirmed the teardown audit completed successfully and the separate Terraform-state and application-backup S3 buckets still exist. See section 2.
+- [x] **Check workflow results.** The Terraform validation workflow completed successfully, and the full-history Gitleaks scan was reviewed with no findings reported. Re-run these checks after substantive code or workflow changes. The deployment workflow's earlier successful plan/apply is separate from static validation.
 - [ ] **Confirm the protected deploy configuration is intentional.** Check the aws-deploy GitHub Environment, branch restrictions/reviewer approval, OIDC trust conditions, workflow variables and the TFPLAN_ENCRYPTION_KEY secret. Do not add static AWS access keys.
 
 ### Local checks
@@ -33,11 +34,11 @@ Validate each root without connecting to the remote state backend:
 
 These are static configuration checks. They do not deploy resources, prove alarm delivery, or test restore behavior.
 
-## 2. Confirm the post-destroy AWS state
+## 2. Post-destroy audit — complete
 
-Use the intended AWS account and eu-west-1. Check the EC2, ECS, Auto Scaling, Elastic Load Balancing, CloudWatch Logs, EBS and billing views to confirm there are no orphaned project resources. Include unattached volumes and any public IPv4 addresses; do not rely only on the main Terraform destroy summary.
+The operator confirmed that the post-destroy audit completed successfully: the application stack is gone, no leftover application resources were found, and the separate Terraform-state and application-backup S3 buckets persist. The application backup and freshness SSM associations were part of the destroyed application stack, so scheduled backups are not running while the app is offline.
 
-The following CLI commands are read-only checks for the two buckets that are deliberately separate from the application stack:
+If you want to independently re-check the persistent buckets in future, these read-only commands are available:
 
     aws s3api head-bucket \
       --bucket REPLACE_WITH_EXISTING_TFSTATE_BUCKET \
