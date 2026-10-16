@@ -2,9 +2,9 @@
 
 This is a portfolio project for deploying [Uptime Kuma](https://github.com/louislam/uptime-kuma) on Amazon ECS using EC2 capacity, an Application Load Balancer (ALB), and Terraform.
 
-> **Current state:** The core application stack was deployed and tested, then destroyed to control AWS costs. The application is offline. The main Terraform state bucket is separate from the app stack and was not included in the main destroy plan.
+> **Current state (16 October 2026):** The application stack is currently deployed for a temporary validation session. Uptime Kuma is reachable through the ALB, the target group is healthy, and an Auto Scaling replacement EC2 instance restored the previous application data from S3. Destroy the application stack after testing to control costs; retain the separate state and backup buckets.
 >
-> **Status of newer work:** The Terraform validation workflow has passed. CI workflows, CloudWatch alarms, optional SNS email notifications, a separate versioned S3 backup bucket, SSM backup/freshness associations, and restore-on-boot code are committed. These newer resources have **not been applied and exercised in AWS yet**. The GitHub OIDC provider and IAM roles still need setup. **No application backup has actually been restored yet.** See [the restore drill](docs/restore-drill.md) and [OIDC setup](docs/oidc-setup.md).
+> **Status of newer work:** GitHub Actions OIDC plan/apply has been exercised. The separate versioned S3 backup bucket is configured; a manual SSM backup uploaded an archive and checksum sidecar. After the EC2 instance was replaced, the restore-on-boot routine restored prior application data, ECS recovered, and the ALB target became healthy. The restore has been demonstrated end-to-end, but exact instance IDs, S3 object version/hash evidence, and measured RPO/RTO were not captured. CloudWatch/SNS alert delivery and each alarm condition still need verification. See [the restore drill](docs/restore-drill.md) and [OIDC setup](docs/oidc-setup.md).
 
 ## Goals
 
@@ -16,7 +16,7 @@ This is a portfolio project for deploying [Uptime Kuma](https://github.com/louis
 
 ## Architecture
 
-The diagram combines the previously tested deployment with the recovery and alarm resources now described in Terraform. The account is not currently running the app.
+The diagram shows the current test deployment and the recovery and alarm resources described in Terraform. The app is temporarily running for validation and should be destroyed after testing to control costs.
 
 ~~~mermaid
 flowchart TB
@@ -26,7 +26,7 @@ flowchart TB
   OIDC["GitHub Actions OIDC<br/>short-lived AWS credentials<br/>roles require setup"]
   State[("Terraform state bucket<br/>versioning + SSE-S3<br/>native .tflock")]
 
-  subgraph AWS["AWS eu-west-1 — app stack currently destroyed"]
+  subgraph AWS["AWS eu-west-1 — temporary test deployment"]
     subgraph VPC["VPC 10.20.0.0/16"]
       IGW["Internet Gateway<br/>public default route"]
       subgraph AZA["Public subnet eu-west-1a"]
@@ -138,7 +138,7 @@ AWS Budget notifications at 50/80/100 percent remain future work and are not yet
 
 ## Backup and restore design
 
-**The restore has not yet been performed.** The original host-path mount meant the only application database could disappear when an EC2 instance was terminated. New code addresses this risk but is not yet proven.
+**Restore demonstrated successfully on 16 October 2026.** The daily SSM backup was triggered manually and uploaded an archive plus its checksum sidecar to S3. The EC2 instance was then replaced by Auto Scaling; the replacement restored the previous Uptime Kuma data, the ECS task became healthy, and the dashboard was accessible. The startup script checks the archive's SHA-256 and SQLite integrity before starting ECS. Exact evidence such as object version IDs, captured verification output, instance IDs and measured RPO/RTO still needs to be recorded.
 
 - Daily SSM State Manager job at **02:05 UTC**.
 - Uses SQLite's online backup API to create a transactionally consistent database snapshot, then packages that snapshot with the remaining application data.
@@ -147,7 +147,7 @@ AWS Budget notifications at 50/80/100 percent remain future work and are not yet
 - On a new EC2 instance, launch-template user data finds the newest archive, downloads it and its checksum, verifies SHA-256 and runs SQLite `PRAGMA integrity_check` before restoring the data directory and starting the ECS agent. If an existing archive cannot be downloaded or validated, the startup script fails rather than silently discarding that recovery point.
 - The S3 lifecycle rule retains current objects for 14 days and noncurrent versions for 30 days.
 
-The backup bucket and SSM job have not yet been created in AWS by the new Terraform code. The next step is to deploy them, trigger a backup, replace the EC2 test instance, and verify Uptime Kuma's saved configuration survives. Follow [docs/restore-drill.md](docs/restore-drill.md); do not mark a restore as successful until the canary monitor is present after instance replacement.
+The backup bucket and SSM associations are deployed. A manual backup and replacement-instance restore succeeded, with prior application data present. Follow [docs/restore-drill.md](docs/restore-drill.md) to complete the evidence record; do not claim measured RPO/RTO or an explicitly verified named canary monitor unless those checks were captured.
 
 Initial recovery targets to measure, not claim: **RPO under 24 hours** and **RTO under 30 minutes**.
 
@@ -162,8 +162,7 @@ The workflows will not authenticate until the AWS IAM OIDC provider, trust roles
 
 ## What was actually tested
 
-During the original test deployment:
-
+### Original stack test
 - ECS service reached steady state with one running task.
 - ALB target health was `healthy`.
 - ECS mapped container port 3001 to EC2 host port 32768.
@@ -172,9 +171,16 @@ During the original test deployment:
 - CloudWatch task log configuration was present.
 - Terraform destroy of the main application stack completed.
 
-The destroy required intervention because ECS capacity management kept an instance in service while the task drained. The ASG was deliberately set to zero, the instance began shutting down, then Terraform destroy completed.
+The original destroy required intervention because ECS capacity management kept an instance in service while the task drained.
 
-These results prove the original stack worked. They do **not** prove HTTPS, OIDC authentication/apply, alarm delivery, new SSM backup commands, or a successful data restore. The Terraform validation workflow passed after the current Terraform files were added; validation is not a substitute for live integration testing.
+### New recovery and delivery test (16 October 2026)
+- GitHub Actions OIDC plan/apply workflow successfully deployed the updated application configuration after IAM permissions were corrected.
+- The daily SSM backup association was manually triggered and uploaded an archive and checksum sidecar to the persistent S3 bucket.
+- The EC2 instance was replaced by Auto Scaling.
+- The replacement restored the previous Uptime Kuma data from S3; the ECS task became healthy and the dashboard was accessible.
+- The restore startup path checks the archive SHA-256 and runs SQLite `PRAGMA integrity_check` before starting ECS. The restored application coming up with prior data indicates that this path completed successfully.
+
+The restore is demonstrated end-to-end, but the exact EC2 IDs, S3 object version/hash, captured startup output, measured RPO/RTO, and explicit named-canary check were not recorded during the session. Alarm delivery, HTTPS, and end-to-end tests of each alarm remain unverified. Terraform validation and successful apply do not substitute for those tests.
 
 ## Roadmap
 
@@ -202,13 +208,12 @@ These results prove the original stack worked. They do **not** prove HTTPS, OIDC
 
 **Exit criteria:** observed end-to-end alert delivery and tested recovery, not just alarm resources in Terraform.
 
-### Phase 4 — prove recoverability
-- Apply and test the daily SSM backup and hourly freshness-check jobs.
-- Verify archive and checksum exist in S3.
-- Replace the EC2 instance and verify the restored Uptime Kuma dashboard retains the canary monitor.
-- Record checksum, database integrity result, timestamps, measured RPO/RTO and sanitized evidence in [docs/restore-drill.md](docs/restore-drill.md).
+### Phase 4 — prove recoverability (restore demonstrated; evidence capture incomplete)
+- **Completed:** manually ran the SSM backup, found the archive/checksum in S3, replaced the EC2 instance, and confirmed prior Uptime Kuma data was restored and the app became healthy.
+- Record the archive/version ID, SHA-256, timestamps, SSM execution ID, old/new instance IDs, and sanitized startup/log evidence in [docs/restore-drill.md](docs/restore-drill.md).
+- Measure RPO/RTO rather than claiming target values; explicitly verify a named canary monitor if using one as the acceptance check.
 
-**Exit criteria:** a real backup has actually been restored and validated after replacement of the original host.
+**Exit criteria:** the restore path has been demonstrated. Finish evidence capture and measurements before presenting quantitative recovery claims.
 
 ### Phase 5 — harden and present the project
 - Add Terraform static analysis/security checks and pin all GitHub Actions to commit SHAs (already done for the current workflows).
