@@ -66,8 +66,9 @@ resource "aws_launch_template" "ecs" {
     fi
 
     printf 'ECS_CLUSTER=%s\n' "${aws_ecs_cluster.main.name}" >> /etc/ecs/ecs.config
+    # Do not block cloud-init while ECS waits for cloud-init to finish.
     systemctl enable ecs
-    systemctl start ecs
+    systemctl start --no-block ecs.service
   EOF
   )
 
