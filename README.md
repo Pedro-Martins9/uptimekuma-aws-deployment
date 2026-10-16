@@ -4,7 +4,7 @@ This is a portfolio project for deploying [Uptime Kuma](https://github.com/louis
 
 > **Current state (16 October 2026):** The application stack is currently deployed for a temporary validation session. Uptime Kuma is reachable through the ALB, the target group is healthy, and an Auto Scaling replacement EC2 instance restored the previous application data from S3. Destroy the application stack after testing to control costs; retain the separate state and backup buckets.
 >
-> **Status of newer work:** GitHub Actions OIDC plan/apply has been exercised. The separate versioned S3 backup bucket is configured; a manual SSM backup uploaded an archive and checksum sidecar. After the EC2 instance was replaced, the restore-on-boot routine restored prior application data, ECS recovered, and the ALB target became healthy. The restore has been demonstrated end-to-end, but exact instance IDs, S3 object version/hash evidence, and measured RPO/RTO were not captured. CloudWatch/SNS alert delivery and each alarm condition still need verification. See [the restore drill](docs/restore-drill.md) and [OIDC setup](docs/oidc-setup.md).
+> **Status of newer work:** GitHub Actions OIDC plan/apply has been exercised. A manual SSM backup uploaded `uptimekuma/archives/20261016T164644Z.tar.gz` and its checksum sidecar. After replacement, instance `i-02971a9f174fdf338` logged that it restored this verified backup; the dashboard shows the existing `wewatch` monitor and history, and the ALB target is healthy. Auto Scaling history identifies the old instance as `i-0118b10e18ad8c2a0`. The restore path is demonstrated end-to-end. The screenshot and launch timestamps bound recovery to no more than about 13 minutes 11 seconds from replacement launch, but the precise first-healthy time was not captured. Exact S3 version ID, checksum digest, SSM execution ID, and direct SQLite integrity output remain missing. CloudWatch/SNS alert delivery and each alarm condition still need verification. See [the restore drill](docs/restore-drill.md) and [OIDC setup](docs/oidc-setup.md).
 
 ## Goals
 
@@ -138,7 +138,7 @@ AWS Budget notifications at 50/80/100 percent remain future work and are not yet
 
 ## Backup and restore design
 
-**Restore demonstrated successfully on 16 October 2026.** The daily SSM backup was triggered manually and uploaded an archive plus its checksum sidecar to S3. The EC2 instance was then replaced by Auto Scaling; the replacement restored the previous Uptime Kuma data, the ECS task became healthy, and the dashboard was accessible. The startup script checks the archive's SHA-256 and SQLite integrity before starting ECS. Exact evidence such as object version IDs, captured verification output, instance IDs and measured RPO/RTO still needs to be recorded.
+**Restore demonstrated successfully on 16 October 2026.** Backup archive `uptimekuma/archives/20261016T164644Z.tar.gz` and its checksum sidecar were uploaded to S3. Auto Scaling replaced `i-0118b10e18ad8c2a0` with `i-02971a9f174fdf338`. The replacement journal recorded `Uptime Kuma data restored from verified backup: uptimekuma/archives/20261016T164644Z.tar.gz`; the existing `wewatch` monitor and history were present, ECS returned healthy, and the dashboard was accessible. The backup timestamp was 16:46:44Z, old-instance termination was 16:48:24Z, and restore success was logged at 16:48:42Z. The dashboard screenshot captured at 18:01:37 UTC+01 bounds recovery at no more than about 13 minutes 11 seconds after replacement launch; the precise first-healthy time wasn't captured. S3 object version ID, exact checksum digest, SSM execution ID, and direct SQLite integrity output still need to be recorded.
 
 - Daily SSM State Manager job at **02:05 UTC**.
 - Uses SQLite's online backup API to create a transactionally consistent database snapshot, then packages that snapshot with the remaining application data.
@@ -147,7 +147,7 @@ AWS Budget notifications at 50/80/100 percent remain future work and are not yet
 - On a new EC2 instance, launch-template user data finds the newest archive, downloads it and its checksum, verifies SHA-256 and runs SQLite `PRAGMA integrity_check` before restoring the data directory and starting the ECS agent. If an existing archive cannot be downloaded or validated, the startup script fails rather than silently discarding that recovery point.
 - The S3 lifecycle rule retains current objects for 14 days and noncurrent versions for 30 days.
 
-The backup bucket and SSM associations are deployed. A manual backup and replacement-instance restore succeeded, with prior application data present. Follow [docs/restore-drill.md](docs/restore-drill.md) to complete the evidence record; do not claim measured RPO/RTO or an explicitly verified named canary monitor unless those checks were captured.
+The backup bucket and SSM associations are deployed. A manual backup and replacement-instance restore succeeded, with the prior `wewatch` monitor and history present. Follow [docs/restore-drill.md](docs/restore-drill.md) to complete the remaining evidence record. The observed timestamp-to-termination gap was about 1 minute 40 seconds, and the recovery-time upper bound is about 13 minutes 11 seconds from replacement launch; these are estimates based on recorded timestamps, not a precise snapshot-age or first-healthy measurement.
 
 Initial recovery targets to measure, not claim: **RPO under 24 hours** and **RTO under 30 minutes**.
 
@@ -208,12 +208,12 @@ The restore is demonstrated end-to-end, but the exact EC2 IDs, S3 object version
 
 **Exit criteria:** observed end-to-end alert delivery and tested recovery, not just alarm resources in Terraform.
 
-### Phase 4 — prove recoverability (restore demonstrated; evidence capture incomplete)
-- **Completed:** manually ran the SSM backup, found the archive/checksum in S3, replaced the EC2 instance, and confirmed prior Uptime Kuma data was restored and the app became healthy.
-- Record the archive/version ID, SHA-256, timestamps, SSM execution ID, old/new instance IDs, and sanitized startup/log evidence in [docs/restore-drill.md](docs/restore-drill.md).
-- Measure RPO/RTO rather than claiming target values; explicitly verify a named canary monitor if using one as the acceptance check.
+### Phase 4 — prove recoverability (restore demonstrated; evidence record partially complete)
+- **Completed:** manually ran the SSM backup, captured the archive key and checksum sidecar, replaced the EC2 instance, found the restore-success log entry, and confirmed the existing `wewatch` monitor/history returned and the app became healthy.
+- Remaining evidence to capture: S3 object version ID, exact checksum digest, SSM execution ID, and direct SQLite integrity output if required.
+- Recorded observations: archive timestamp 16:46:44Z; old instance terminated at 16:48:24Z; restore success logged at 16:48:42Z; the healthy dashboard screenshot was captured at 18:01:37 UTC+01. This gives an approximate timestamp-to-termination gap of 1m40s and a recovery-time upper bound of 13m11s from replacement launch, not a precise RPO/RTO measurement.
 
-**Exit criteria:** the restore path has been demonstrated. Finish evidence capture and measurements before presenting quantitative recovery claims.
+**Exit criteria:** end-to-end restore demonstrated. Capture remaining evidence and label timing estimates appropriately before presenting recovery metrics.
 
 ### Phase 5 — harden and present the project
 - Add Terraform static analysis/security checks and pin all GitHub Actions to commit SHAs (already done for the current workflows).
