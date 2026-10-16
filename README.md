@@ -111,8 +111,8 @@ The validation workflow has passed, and the full-history Gitleaks scan has been 
 This repository is a learning project, not a one-click deployment. Before deploying it in your own AWS account:
 
 1. Install Terraform and AWS CLI, and configure an AWS identity with the permissions required by the chosen workflow.
-2. Review the [OIDC setup guide](docs/oidc-setup.md) if using GitHub Actions. It contains account-specific example values that must be updated for another account.
-3. Review the backend bucket, provider account guard, and other account-specific settings in the Terraform configuration before initializing the application root.
+2. Review the [OIDC setup guide](docs/oidc-setup.md) if using GitHub Actions. Replace every placeholder and configure the repository variables/secrets described there.
+3. Set the existing state bucket name in both remote backend blocks (`terraform/versions.tf` and `terraform/backup-infra/versions.tf`) before initializing. Set `TF_VAR_aws_account_id` to the expected 12-digit account ID. Do not commit account-specific values.
 4. Bootstrap the Terraform state storage, then apply `terraform/backup-infra/`, and finally plan the main application root in `terraform/`.
 5. Review the **entire** Terraform plan before applying. The application requires an allowed client IPv4 CIDR for the temporary HTTP endpoint; never leave an administrative dashboard exposed more broadly than intended.
 
