@@ -35,7 +35,7 @@ The application stack was destroyed after the recovery test to control costs. Th
 - The main application stack is offline.
 - The application-root SSM backup and freshness associations were removed with the main stack; scheduled backups do not run while it is offline.
 
-The retained buckets are deliberately managed separately from the main app root. Previously recorded actual bucket names were `REPLACE_WITH_EXISTING_TFSTATE_BUCKET` and `REPLACE_WITH_APP_BACKUP_BUCKET`. They can continue to incur small S3 storage charges. Do not destroy the state bucket while it is needed by either remote-state root. Do not run routine app teardown from `terraform/bootstrap-state/` or `terraform/backup-infra/`.
+The retained buckets are deliberately managed separately from the main app root. Their actual names are account-specific and remain in the private operational configuration; replace them with placeholders in public-facing docs unless the concrete values are intentionally disclosed. They can continue to incur small S3 storage charges. Do not destroy the state bucket while it is needed by either remote-state root. Do not run routine app teardown from `terraform/bootstrap-state/` or `terraform/backup-infra/`.
 
 The main backend configuration points to the state bucket and key `uptimekuma/terraform.tfstate`; the backup-infrastructure state key is `uptimekuma/backup-infra.tfstate`. The bootstrap root uses local state unless migrated separately.
 
@@ -50,11 +50,11 @@ The main backend configuration points to the state bucket and key `uptimekuma/te
 
 ### Backup and restore drill — successful
 - Manual SSM backup uploaded an archive and SHA-256 sidecar to the persistent S3 backup bucket.
-- Archive key: `uptimekuma/archives/20261016T164644Z.tar.gz`.
-- Checksum sidecar: `uptimekuma/checksums/20261016T164644Z.tar.gz.sha256`.
+- Archive key pattern: `uptimekuma/archives/<UTC timestamp>.tar.gz`.
+- Checksum sidecar pattern: `uptimekuma/checksums/<UTC timestamp>.tar.gz.sha256`.
 - Auto Scaling replaced the EC2 instance.
-- Replacement startup logged: `Uptime Kuma data restored from verified backup: uptimekuma/archives/20261016T164644Z.tar.gz`.
-- The previous `wewatch` monitor/history returned; the user confirmed the dashboard was accessible and the ALB target healthy.
+- Replacement startup logged that it restored data from a verified timestamped S3 archive.
+- The previous monitor configuration and history returned; the user confirmed the dashboard was accessible and the ALB target healthy.
 - The restore path checks SHA-256 and runs SQLite `PRAGMA integrity_check` before starting the ECS agent. Direct command output was not captured separately.
 - Recorded observations: archive timestamp 16:46:44Z; old instance termination 16:48:24Z; restore log 16:48:42Z. A dashboard screenshot later bounded recovery by about 13m11s from replacement launch. This is an upper bound inferred from timestamps, **not** an exact RTO. Exact RPO/RTO were not measured.
 - Exact S3 object version ID, SHA-256 digest string, SSM execution ID, and direct SQLite `ok` output were not recorded.
@@ -84,7 +84,7 @@ Relevant recent commits:
 - Gitleaks scanner pin: `6ee16ce38ad1e8a16136b15eb4e887383303cdab`
 - Gitleaks workflow created; the malformed `.github/workflows/main.yml` fragment was deleted.
 
-The README has been shortened and sanitized: it no longer includes the known AWS account ID, exact EC2 IDs, bucket names or monitor name. The readiness doc has been updated to reflect confirmed Gitleaks, validation and teardown checks. The repo is **still private**.
+The README has been shortened and sanitized: it no longer includes the known AWS account ID, exact EC2 IDs, bucket names or monitor name. Other detailed docs still contain account-specific identifiers and some restore evidence values, so the public-sanitization review must cover `docs/oidc-setup.md`, `docs/restore-drill.md`, and `docs/portfolio-readiness.md`. The readiness doc reflects the confirmed Gitleaks, validation and teardown checks. The repo is **still private**.
 
 ## 5. Prioritized next-session plan
 
@@ -93,7 +93,7 @@ Work in this order. Do not re-run completed security scan or teardown checks unl
 ### Priority 1 — finish documentation sanitization before publishing
 - [ ] Review and generalize `docs/oidc-setup.md`. It currently contains account ID, owner/repository numeric IDs, specific OIDC provider ARN, role names, bucket names and live subject examples. Replace sensitive-to-disclose values with clear placeholders, but preserve the correct **immutable subject claim format** for this repository. Clearly label the example placeholders and explain what to substitute in the user’s AWS/GitHub account. Do not accidentally revert to the older name-only OIDC subject format.
 - [ ] Update `docs/restore-drill.md` to reflect the user-confirmed successful post-destroy audit and the persistent buckets. Decide whether detailed EC2 IDs, exact S3 keys and monitor name belong in the public-facing record; keep necessary evidence while removing unnecessary account-specific identifiers.
-- [ ] Search the complete current tree for account IDs, bucket names, actual instance IDs, e-mail addresses, internal endpoint/monitor names, or other personal/operational details. Keep details only where they are intentionally part of a useful, safe example.
+- [ ] Search the complete current tree, including this handoff, for account IDs, bucket names, actual instance IDs, e-mail addresses, internal endpoint/monitor names, or other personal/operational details. Keep details only where they are intentionally part of a useful, safe example.
 - [ ] Inspect the docs for contradictions, outdated statements and links after edits.
 
 ### Priority 2 — finish the public repository presentation
