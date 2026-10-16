@@ -1,6 +1,6 @@
 # Uptime Kuma backup / restore drill
 
-**Status: SUCCESSFUL RESTORE DEMONSTRATED — 16 October 2026; evidence record incomplete.** The operator manually ran the SSM backup, confirmed the archive and checksum sidecar were uploaded to S3, then replaced the EC2 instance through Auto Scaling. The replacement restored the previous Uptime Kuma data, ECS returned to service, the ALB target became healthy, and the dashboard was accessible. The launch-time script will only start ECS after archive checksum and SQLite integrity checks pass, so successful startup with the old data indicates those checks completed. Exact object/version identifiers, instance IDs, captured checksum/integrity output, and measured RPO/RTO were not saved. This is evidence of a successful restore, but the drill record below remains partially incomplete.
+**Status: SUCCESSFUL RESTORE DEMONSTRATED — 16 October 2026; evidence record partially complete.** The operator manually ran the SSM backup, confirmed the archive and checksum sidecar were uploaded to S3, then replaced the EC2 instance through Auto Scaling. The replacement instance `i-02971a9f174fdf338` logged `Uptime Kuma data restored from verified backup: uptimekuma/archives/20261016T164644Z.tar.gz`. The dashboard screenshot shows the existing `wewatch` monitor and its history present and Up; the user also confirmed the target group was healthy. The startup script emits that log message only after checksum validation and SQLite `PRAGMA integrity_check` succeed. Direct digest and integrity-check output, the S3 object version ID, SSM execution ID, and exact first-healthy timestamp were not separately captured. The activity history and screenshot do support a bounded recovery-time estimate.
 
 ## Scope and recovery design
 
@@ -158,18 +158,24 @@ Fill this in only after the drill:
 
 | Field | Result |
 |---|---|
-| Date/time (UTC) | 16 October 2026; exact backup, termination, and restore timestamps not captured |
-| Backup archive key + version ID | Archive and companion checksum sidecar found in S3; exact key/version ID not recorded |
-| SHA-256 | Restore startup completed and prior data was present, indicating checksum validation passed; digest/output not captured |
-| SSM backup execution | Manual backup execution succeeded and uploaded archive + checksum; execution ID not recorded |
-| Old / replacement EC2 instance IDs | Auto Scaling replaced the instance; IDs not recorded |
-| `PRAGMA integrity_check` result | Restore startup completed, indicating SQLite integrity check passed; direct output not captured |
-| Uptime Kuma service healthy after replacement | **PASS** — dashboard accessible and ALB target healthy |
-| Canary monitor present after restore | Existing prior application data was confirmed present; the specifically named `RESTORE-DRILL-CANARY` was not recorded as checked |
-| Measured RPO | NOT MEASURED |
-| Measured RTO | NOT MEASURED |
-| Evidence location | Not collected during this run |
-| Outcome | **SUCCESS — restore demonstrated end-to-end; formal evidence record incomplete** |
+| Date | 16 October 2026 |
+| Backup archive key | `uptimekuma/archives/20261016T164644Z.tar.gz` |
+| Checksum sidecar key | `uptimekuma/checksums/20261016T164644Z.tar.gz.sha256` |
+| S3 object version ID | Not captured |
+| SHA-256 | Operator confirmed archive/checksum matched; exact digest not recorded. Replacement startup logged `restored from verified backup`. |
+| SSM backup execution ID | Not captured; manual association execution succeeded and uploaded archive + checksum |
+| Previous EC2 instance | `i-0118b10e18ad8c2a0` |
+| Replacement EC2 instance | `i-02971a9f174fdf338` |
+| Replacement activity | Old instance terminated at `2026-10-16T16:48:24Z`; new instance launched in response and launch completed at `2026-10-16T16:48:31Z` |
+| Restore log time | `2026-10-16 16:48:42Z` according to the replacement instance's journal |
+| `PRAGMA integrity_check` | Startup progressed to the `restored from verified backup` log only after the integrity check passed; direct output `ok` was not captured |
+| Uptime Kuma service healthy after replacement | **PASS** — user confirmed dashboard accessible and target group healthy |
+| Existing application data | **PASS** — dashboard shows the previous `wewatch` monitor and its history |
+| Named `RESTORE-DRILL-CANARY` monitor | Not created/checked; prior application monitor used as the restore marker |
+| Backup timestamp to old-instance termination | Approximately 1 minute 40 seconds (`16:46:44Z` to `16:48:24Z`); this is a timestamp-to-termination gap, not an exact RPO measurement |
+| Recovery-time bound | Dashboard screenshot file timestamp is `18:01:37` local time (`UTC+01:00`); replacement launched at `17:48:26` local time. Dashboard was working within **13 minutes 11 seconds** of the replacement launch; exact first-healthy time was not captured. |
+| Evidence | Auto Scaling activity-history screenshot; Uptime Kuma dashboard screenshot; replacement-instance journal line pasted in the work log |
+| Outcome | **SUCCESS — backup restore demonstrated end-to-end; some exact artifacts and timestamps still need recording** |
 
 Target objectives for the first test, to measure rather than assume: RPO under 24 hours and RTO under 30 minutes.
 
