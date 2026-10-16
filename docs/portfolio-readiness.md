@@ -6,12 +6,12 @@
 
 ## 1. Required before changing repository visibility
 
-- [ ] **Scan the complete Git history for secrets.** Use a dedicated scanner such as Gitleaks against all branches, tags and history, then inspect any findings. Current tracked files do not include Terraform state, .tfvars, plan files or private-key files, but the full history has not been scanned as part of this review.
+- [ ] **Run the full-history Gitleaks scan and review the result.** The workflow `.github/workflows/gitleaks.yml` is now configured for pushes, pull requests, daily scans and manual dispatch. In GitHub, open **Actions → Secret scanning (Gitleaks) → Run workflow**, select `main`, then review the job summary and any SARIF artifact. Manual and scheduled runs scan the complete history; push and pull-request runs scan the relevant changes. The initial full-history run has not yet been confirmed successful.
 - [ ] **If any credential was ever committed, treat it as exposed.** Revoke or rotate it first. Removing it from the latest tree alone does not remove it from Git history.
 - [ ] **Confirm the repository contains no real Terraform state, plan artifacts, AWS credential files, private keys, personal data or unsanitized screenshots.** Keep the .terraform.lock.hcl files; those dependency lock files are intentionally tracked.
 - [ ] **Decide whether to publish the account-specific identifiers.** The Terraform backend names, AWS account ID, bucket names, GitHub owner/repository IDs and sample IAM ARNs appear in the code/docs. These are identifiers, not AWS credentials, but they become more easily discoverable in a public repo. Generalize them if you do not want them public.
 - [ ] **Verify AWS cleanup and expected persistent storage.** The application destroy reported 19 resources destroyed, but the final audit was not confirmed in this review. See section 2.
-- [ ] **Check the current default-branch Actions results.** Confirm Terraform formatting/validation passes for all three roots. The deployment workflow's earlier successful plan/apply is useful evidence, but does not replace a current validation run after final edits.
+- [ ] **Check the current default-branch Actions results.** Confirm Gitleaks completes a manual full-history scan without unresolved findings, and Terraform formatting/validation passes for all three roots. The deployment workflow's earlier successful plan/apply is useful evidence, but does not replace a current validation run after final edits.
 - [ ] **Confirm the protected deploy configuration is intentional.** Check the aws-deploy GitHub Environment, branch restrictions/reviewer approval, OIDC trust conditions, workflow variables and the TFPLAN_ENCRYPTION_KEY secret. Do not add static AWS access keys.
 
 ### Local checks
