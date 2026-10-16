@@ -94,7 +94,7 @@ Work in this order. Do not re-run completed security scan or teardown checks unl
 - [x] Generalize `docs/oidc-setup.md` with placeholders while preserving the immutable subject-claim structure. Confirm the exact claim format against current GitHub documentation before configuring OIDC.
 - [x] Update `docs/restore-drill.md` to reflect the confirmed teardown audit and persistent buckets; machine-specific identifiers and exact object keys are omitted from the publication copy.
 - [ ] Finish a full-tree publication review. Backend bucket references are placeholders and the AWS account guard is set at runtime; check Git history and all remaining Terraform/workflow values before changing visibility.
-- [ ] Inspect the docs for contradictions, outdated statements and links after edits.
+- [x] Inspect the edited docs for contradictions and stale teardown language; re-run a final full-tree review before publication.
 
 ### Priority 2 — finish the public repository presentation
 - [ ] Add a `LICENSE` only after choosing the intended reuse terms; no license file is currently tracked.
