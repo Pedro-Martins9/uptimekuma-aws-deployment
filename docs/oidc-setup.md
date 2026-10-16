@@ -114,20 +114,20 @@ Save the JSON below as `uptimekuma-terraform-apply` and attach it only to `uptim
       "Sid": "ManageProjectVpcAndLaunchTemplate",
       "Effect": "Allow",
       "Action": [
-        "ec2:CreateVpc", "ec2:DeleteVpc", "ec2:DescribeVpcs", "ec2:DescribeVpcAttribute", "ec2:ModifyVpcAttribute",
-        "ec2:CreateSubnet", "ec2:DeleteSubnet", "ec2:DescribeSubnets", "ec2:DescribeSubnetAttribute", "ec2:ModifySubnetAttribute",
-        "ec2:CreateInternetGateway", "ec2:DeleteInternetGateway", "ec2:DescribeInternetGateways",
+        "ec2:Describe*",
+        "ec2:CreateVpc", "ec2:DeleteVpc", "ec2:ModifyVpcAttribute",
+        "ec2:CreateSubnet", "ec2:DeleteSubnet", "ec2:ModifySubnetAttribute",
+        "ec2:CreateInternetGateway", "ec2:DeleteInternetGateway",
         "ec2:AttachInternetGateway", "ec2:DetachInternetGateway",
-        "ec2:CreateRouteTable", "ec2:DeleteRouteTable", "ec2:DescribeRouteTables",
+        "ec2:CreateRouteTable", "ec2:DeleteRouteTable",
         "ec2:CreateRoute", "ec2:DeleteRoute",
         "ec2:AssociateRouteTable", "ec2:DisassociateRouteTable",
-        "ec2:CreateSecurityGroup", "ec2:DeleteSecurityGroup", "ec2:DescribeSecurityGroups",
+        "ec2:CreateSecurityGroup", "ec2:DeleteSecurityGroup",
         "ec2:AuthorizeSecurityGroupIngress", "ec2:AuthorizeSecurityGroupEgress",
         "ec2:RevokeSecurityGroupIngress", "ec2:RevokeSecurityGroupEgress",
-        "ec2:CreateLaunchTemplate", "ec2:CreateLaunchTemplateVersion", "ec2:DescribeLaunchTemplates", "ec2:DescribeLaunchTemplateVersions",
+        "ec2:CreateLaunchTemplate", "ec2:CreateLaunchTemplateVersion",
         "ec2:ModifyLaunchTemplate", "ec2:DeleteLaunchTemplateVersions",
         "ec2:DeleteLaunchTemplate",
-        "ec2:DescribeTags", "ec2:DescribeAvailabilityZones",
         "ec2:CreateTags", "ec2:DeleteTags"
       ],
       "Resource": "*"
@@ -253,7 +253,7 @@ Save the JSON below as `uptimekuma-terraform-apply` and attach it only to `uptim
 }
 ```
 
-The latest failed apply exposed missing permissions for `ec2:DescribeVpcs` and `cloudwatch:ListTagsForResource`. Those read/list actions are now included in the example apply-role policy above. If the IAM role has already been configured from an earlier version of this guide, update the live inline policy in IAM as well; changing this file does not change permissions in AWS. Keep the `ReadOnlyAccess` attachment on both Terraform roles as described above.
+The latest failed apply exposed missing permissions for `ec2:DescribeVpcs` and `cloudwatch:ListTagsForResource`. The example policy grants the read-only EC2 Describe API family using `ec2:Describe*` with `Resource: "*"`; AWS documents that EC2 Describe APIs do not support resource-level permissions. Do not add `ec2:DescribeSubnetAttribute`: it is not a valid action in the EC2 Service Authorization Reference. `cloudwatch:ListTagsForResource` is a valid CloudWatch IAM action and is included in the alarm/notification statement. If the live role was configured from an earlier version of this guide, update its inline policy in IAM as well; changing this file does not change permissions in AWS. Also verify that the `ReadOnlyAccess` managed policy is actually attached to the live apply role, as intended.
 
 Some create APIs and tagging operations do not support full resource scoping in the same way as update/delete APIs; the example uses `Resource: "*"` for several service groups. That is a trade-off, not perfect least privilege. For a shared or production account, split statements and restrict resources by ARN, request tags or existing tags wherever supported. Do not use this starter policy as a substitute for a policy review. The managed `ReadOnlyAccess` policy plus the state policy from section 3 remains on each role.
 
