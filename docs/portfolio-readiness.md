@@ -41,24 +41,24 @@ The operator confirmed that the post-destroy audit completed successfully: the a
 If you want to independently re-check the persistent buckets in future, these read-only commands are available:
 
     aws s3api head-bucket \
-      --bucket REPLACE_WITH_EXISTING_TFSTATE_BUCKET \
-      --region eu-west-1
+      --bucket <TFSTATE_BUCKET> \\
+      --region <AWS_REGION>
 
     aws s3api head-bucket \
-      --bucket REPLACE_WITH_APP_BACKUP_BUCKET \
-      --region eu-west-1
+      --bucket <APP_BACKUP_BUCKET> \\
+      --region <AWS_REGION>
 
     aws s3api list-objects-v2 \
-      --bucket REPLACE_WITH_APP_BACKUP_BUCKET \
+      --bucket <APP_BACKUP_BUCKET> \\
       --prefix uptimekuma/archives/ \
-      --region eu-west-1 \
+      --region <AWS_REGION> \\
       --query 'Contents[].{Key:Key,LastModified:LastModified,Size:Size}' \
       --output table
 
     aws s3api list-objects-v2 \
-      --bucket REPLACE_WITH_APP_BACKUP_BUCKET \
+      --bucket <APP_BACKUP_BUCKET> \\
       --prefix uptimekuma/checksums/ \
-      --region eu-west-1 \
+      --region <AWS_REGION> \\
       --query 'Contents[].{Key:Key,LastModified:LastModified,Size:Size}' \
       --output table
 
