@@ -185,18 +185,18 @@ The restore is demonstrated end-to-end, but the exact EC2 IDs, S3 object version
 ## Roadmap
 
 ### Phase 1 — secure the baseline
-- Pin Uptime Kuma to a specific supported image version or digest; the current `louislam/uptime-kuma:1` tag is moving.
-- Add HTTPS with ACM and a domain, or remove unused port 443 ingress until TLS is available.
-- Apply `terraform/backup-infra/` before the application root.
+- Uptime Kuma is pinned to `louislam/uptime-kuma:2.5.6`; review upstream releases before future upgrades.
+- Add HTTPS with ACM and a domain, or keep the HTTP endpoint restricted and temporary.
+- The separate backup bucket is deployed and the replacement-instance restore has been demonstrated; finish recording the evidence and measured recovery times.
 - Run preflight and post-deploy checks. Improve teardown behavior around ECS draining and capacity-provider scale-in.
 
 **Exit criteria:** repeatable deployment, healthy ALB target, successful SSM access, predictable teardown, no leftover billable resources.
 
-### Phase 2 — prove CI/CD identity
-- Configure GitHub OIDC provider and separate plan/apply IAM roles with subject conditions scoped to this repo and branch/Environment.
-- Set GitHub repository variable `AWS_TERRAFORM_PLAN_ROLE_ARN`, environment variable `AWS_TERRAFORM_APPLY_ROLE_ARN`, and optional `ALERT_EMAIL`.
-- Protect the `aws-deploy` Environment.
-- Execute a plan-only workflow and a deliberately gated test deployment.
+### Phase 2 — CI/CD identity (basic flow demonstrated)
+- GitHub OIDC provider and separate plan/apply IAM roles are configured with repository and environment subject restrictions.
+- The plan and gated apply workflows have run successfully using short-lived credentials; permissions were adjusted in response to AWS AccessDenied errors.
+- Continue reviewing and tightening the apply role's permissions without breaking provider reads, resource lifecycle operations or launch-template use.
+- Keep the `aws-deploy` Environment protected and retain the plan-review and approval steps.
 
 **Exit criteria:** plan works without static keys; untrusted pull requests cannot obtain AWS credentials; apply is explicit, scoped and audited.
 
