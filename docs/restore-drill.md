@@ -181,11 +181,14 @@ Target objectives for the first test, to measure rather than assume: RPO under 2
 
 ## After the drill
 
-1. Remove the test monitor if appropriate.
-2. Verify alarms have returned to OK and the hourly backup-freshness metric is reporting fresh data.
-3. Run `terraform plan -destroy` from the **main** `terraform/` directory and carefully inspect it.
-4. Destroy only the main application stack when testing is complete.
-5. Do not run destroy from `terraform/backup-infra/` or `terraform/bootstrap-state/`; these contain persistent backup and state storage.
-6. Check AWS for any remaining ALB, EC2 instance, EBS volume, public IPv4 allocation, or application log group that could continue to incur charges.
+**Teardown completed on 16 October 2026.** The operator applied a fresh destroy plan from the main application root after the ECS/Auto Scaling teardown initially stalled. After scaling the Auto Scaling Group's desired capacity to zero and replanning, Terraform reported **19 resources destroyed**. This removed the main application stack after the restore had been demonstrated.
 
-A created archive and a successful checksum are not, by themselves, proof of recoverability. The proof is the replacement instance starting with the archived data and the canary monitor still present.
+Post-destroy checks still to confirm in the AWS Console:
+1. The application ALB, ECS cluster/service, Auto Scaling Group, EC2 instance(s), and application CloudWatch log group are gone.
+2. The persistent Terraform state bucket `REPLACE_WITH_EXISTING_TFSTATE_BUCKET` still exists.
+3. The persistent backup bucket `REPLACE_WITH_APP_BACKUP_BUCKET` still exists and contains the archive and checksum from this test.
+4. No orphaned EBS volume or other billable test resource remains.
+
+Do not run destroy from `terraform/backup-infra/` or `terraform/bootstrap-state/`; those roots manage the persistent backup and state storage. The hourly and daily SSM associations were in the main application stack and were removed during teardown, so backup automation will not run while the app stack is offline.
+
+A created archive and a successful checksum are not, by themselves, proof of recoverability. The proof from this test was the replacement instance restoring from the archive, the restoration log, and the previous `wewatch` monitor/history present after the application returned.
