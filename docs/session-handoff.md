@@ -23,7 +23,7 @@ Key components in the tested architecture:
 - Daily SQLite-consistent application backup to S3, SHA-256 sidecar, and restore-on-EC2-startup validation.
 - GitHub Actions for Terraform validation, Gitleaks scanning, and a manually gated Terraform plan/apply workflow using AWS OIDC.
 
-AWS region used: `eu-west-1`. Terraform currently has account-specific backend and provider settings. Review before using in another account.
+AWS region used: `eu-west-1`. Remote state backends use `REPLACE_WITH_EXISTING_TFSTATE_BUCKET` placeholders and must be restored to the existing bucket name before running Terraform. Provider account guards use `aws_account_id`; set `TF_VAR_aws_account_id` explicitly.
 
 ## 2. Current AWS state — do not redeploy by assumption
 
@@ -60,7 +60,7 @@ The main backend configuration points to the state bucket and key `uptimekuma/te
 - Exact S3 object version ID, SHA-256 digest string, SSM execution ID, and direct SQLite `ok` output were not recorded.
 - The named `RESTORE-DRILL-CANARY` monitor was not created; existing monitor data was used as the restore marker.
 
-Detailed evidence remains in [docs/restore-drill.md](restore-drill.md). It needs updating: its post-destroy section still says cleanup checks need confirmation, whereas the user has since confirmed the teardown audit and bucket persistence. Also remove or generalize machine-specific identifiers in that doc before publishing.
+Detailed evidence remains in [docs/restore-drill.md](restore-drill.md). Its publication copy now records the confirmed teardown audit, preserves recovery bounds without exact RTO claims, and generalizes machine-specific identifiers.
 
 ## 4. GitHub Actions and repository state
 
@@ -84,16 +84,16 @@ Relevant recent commits:
 - Gitleaks scanner pin: `6ee16ce38ad1e8a16136b15eb4e887383303cdab`
 - Gitleaks workflow created; the malformed `.github/workflows/main.yml` fragment was deleted.
 
-The README has been shortened and sanitized: it no longer includes the known AWS account ID, exact EC2 IDs, bucket names or monitor name. Other detailed docs still contain account-specific identifiers and some restore evidence values, so the public-sanitization review must cover `docs/oidc-setup.md`, `docs/restore-drill.md`, and `docs/portfolio-readiness.md`. The readiness doc reflects the confirmed Gitleaks, validation and teardown checks. The repo is **still private**.
+The OIDC guide, restore drill, readiness checklist, backend blocks and deploy workflow account guard are generalized. The repository remains private. Before Terraform use, restore the existing bucket name in both remote backend blocks and set `TF_VAR_aws_account_id`.
 
 ## 5. Prioritized next-session plan
 
 Work in this order. Do not re-run completed security scan or teardown checks unless changes justify re-running them.
 
 ### Priority 1 — finish documentation sanitization before publishing
-- [ ] Review and generalize `docs/oidc-setup.md`. It currently contains account ID, owner/repository numeric IDs, specific OIDC provider ARN, role names, bucket names and live subject examples. Replace sensitive-to-disclose values with clear placeholders, but preserve the correct **immutable subject claim format** for this repository. Clearly label the example placeholders and explain what to substitute in the user’s AWS/GitHub account. Do not accidentally revert to the older name-only OIDC subject format.
-- [ ] Update `docs/restore-drill.md` to reflect the user-confirmed successful post-destroy audit and the persistent buckets. Decide whether detailed EC2 IDs, exact S3 keys and monitor name belong in the public-facing record; keep necessary evidence while removing unnecessary account-specific identifiers.
-- [ ] Search the complete current tree, including this handoff, for account IDs, bucket names, actual instance IDs, e-mail addresses, internal endpoint/monitor names, or other personal/operational details. Keep details only where they are intentionally part of a useful, safe example.
+- [x] Generalize `docs/oidc-setup.md` with placeholders while preserving the immutable subject-claim structure. Confirm the exact claim format against current GitHub documentation before configuring OIDC.
+- [x] Update `docs/restore-drill.md` to reflect the confirmed teardown audit and persistent buckets; machine-specific identifiers and exact object keys are omitted from the publication copy.
+- [ ] Finish a full-tree publication review. Backend bucket references are placeholders and the AWS account guard is set at runtime; check Git history and all remaining Terraform/workflow values before changing visibility.
 - [ ] Inspect the docs for contradictions, outdated statements and links after edits.
 
 ### Priority 2 — finish the public repository presentation
