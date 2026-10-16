@@ -2,7 +2,7 @@
 
 This is a portfolio project for deploying [Uptime Kuma](https://github.com/louislam/uptime-kuma) on Amazon ECS using EC2 capacity, an Application Load Balancer (ALB), and Terraform.
 
-> **Current state (16 October 2026):** The application stack is currently deployed for a temporary validation session. Uptime Kuma is reachable through the ALB, the target group is healthy, and an Auto Scaling replacement EC2 instance restored the previous application data from S3. Destroy the application stack after testing to control costs; retain the separate state and backup buckets.
+> **Current state (16 October 2026):** The main application stack has been destroyed after the deployment and restore validation to control AWS costs. Uptime Kuma is offline. The final Terraform destroy reported **19 resources destroyed**. The Terraform state bucket and app-backup bucket are in separate Terraform roots and were not part of the main application destroy plan; verify both still exist before considering cleanup complete.
 >
 > **Status of newer work:** GitHub Actions OIDC plan/apply has been exercised. A manual SSM backup uploaded `uptimekuma/archives/20261016T164644Z.tar.gz` and its checksum sidecar. After replacement, instance `i-02971a9f174fdf338` logged that it restored this verified backup; the dashboard shows the existing `wewatch` monitor and history, and the ALB target is healthy. Auto Scaling history identifies the old instance as `i-0118b10e18ad8c2a0`. The restore path is demonstrated end-to-end. The screenshot and launch timestamps bound recovery to no more than about 13 minutes 11 seconds from replacement launch, but the precise first-healthy time was not captured. Exact S3 version ID, checksum digest, SSM execution ID, and direct SQLite integrity output remain missing. CloudWatch/SNS alert delivery and each alarm condition still need verification. See [the restore drill](docs/restore-drill.md) and [OIDC setup](docs/oidc-setup.md).
 
@@ -16,7 +16,7 @@ This is a portfolio project for deploying [Uptime Kuma](https://github.com/louis
 
 ## Architecture
 
-The diagram shows the current test deployment and the recovery and alarm resources described in Terraform. The app is temporarily running for validation and should be destroyed after testing to control costs.
+The diagram shows the application architecture used for the deployment and restore test. The application resources have since been destroyed to control costs; the persistent state and backup buckets are managed separately.
 
 ~~~mermaid
 flowchart TB
@@ -26,7 +26,7 @@ flowchart TB
   OIDC["GitHub Actions OIDC<br/>short-lived AWS credentials<br/>roles require setup"]
   State[("Terraform state bucket<br/>versioning + SSE-S3<br/>native .tflock")]
 
-  subgraph AWS["AWS eu-west-1 — temporary test deployment"]
+  subgraph AWS["AWS eu-west-1 — test stack now destroyed"]
     subgraph VPC["VPC 10.20.0.0/16"]
       IGW["Internet Gateway<br/>public default route"]
       subgraph AZA["Public subnet eu-west-1a"]
@@ -147,7 +147,7 @@ AWS Budget notifications at 50/80/100 percent remain future work and are not yet
 - On a new EC2 instance, launch-template user data finds the newest archive, downloads it and its checksum, verifies SHA-256 and runs SQLite `PRAGMA integrity_check` before restoring the data directory and starting the ECS agent. If an existing archive cannot be downloaded or validated, the startup script fails rather than silently discarding that recovery point.
 - The S3 lifecycle rule retains current objects for 14 days and noncurrent versions for 30 days.
 
-The backup bucket and SSM associations are deployed. A manual backup and replacement-instance restore succeeded, with the prior `wewatch` monitor and history present. Follow [docs/restore-drill.md](docs/restore-drill.md) to complete the remaining evidence record. The observed timestamp-to-termination gap was about 1 minute 40 seconds, and the recovery-time upper bound is about 13 minutes 11 seconds from replacement launch; these are estimates based on recorded timestamps, not a precise snapshot-age or first-healthy measurement.
+The backup bucket remains managed by the separate `terraform/backup-infra/` root. The SSM associations were part of the main application stack and were removed during teardown. A manual backup and replacement-instance restore succeeded, with the prior `wewatch` monitor and history present. The observed timestamp-to-termination gap was about 1 minute 40 seconds, and the recovery-time upper bound is about 13 minutes 11 seconds from replacement launch; these are estimates based on recorded timestamps, not a precise snapshot-age or first-healthy measurement. The application resources were subsequently destroyed: Terraform reported 19 resources destroyed. See [docs/restore-drill.md](docs/restore-drill.md) for the evidence record and teardown notes.
 
 Initial recovery targets to measure, not claim: **RPO under 24 hours** and **RTO under 30 minutes**.
 
