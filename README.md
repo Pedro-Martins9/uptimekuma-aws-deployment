@@ -1,11 +1,38 @@
 # Uptime Kuma on AWS ECS (EC2) with Terraform
 
-This is a portfolio project for deploying [Uptime Kuma](https://github.com/louislam/uptime-kuma) on Amazon ECS using EC2 capacity, an Application Load Balancer (ALB), and Terraform.
+A cloud/DevOps portfolio project that provisions Uptime Kuma on **Amazon ECS using EC2 capacity**, with Terraform-managed networking, an Application Load Balancer, Auto Scaling, SSM-based administration, CloudWatch monitoring, S3-backed recovery, and a gated GitHub Actions workflow using OIDC.
 
-> **Current state (16 October 2026):** The main application stack has been destroyed after the deployment and restore validation to control AWS costs. Uptime Kuma is offline. The final Terraform destroy reported **19 resources destroyed**. The Terraform state bucket and app-backup bucket are in separate Terraform roots and were not part of the main application destroy plan; verify both still exist before considering cleanup complete.
->
-> **Status of newer work:** GitHub Actions OIDC plan/apply has been exercised. A manual SSM backup uploaded `uptimekuma/archives/20261016T164644Z.tar.gz` and its checksum sidecar. After replacement, instance `i-02971a9f174fdf338` logged that it restored this verified backup; the dashboard shows the existing `wewatch` monitor and history, and the ALB target is healthy. Auto Scaling history identifies the old instance as `i-0118b10e18ad8c2a0`. The restore path is demonstrated end-to-end. The screenshot and launch timestamps bound recovery to no more than about 13 minutes 11 seconds from replacement launch, but the precise first-healthy time was not captured. Exact S3 version ID, checksum digest, SSM execution ID, and direct SQLite integrity output remain missing. CloudWatch/SNS alert delivery and each alarm condition still need verification. See [the restore drill](docs/restore-drill.md) and [OIDC setup](docs/oidc-setup.md).
+> **Deployment status: offline.** The application stack was destroyed after deployment and recovery testing on 16 October 2026 to control costs. The persistent Terraform-state and application-backup buckets use separate Terraform roots and need a final post-destroy existence/cost check.
 
+## Project at a glance
+
+| Area | Implementation | Evidence / current status |
+|---|---|---|
+| Infrastructure as code | Terraform, separated state bootstrap, application and backup-storage roots | Main application stack was provisioned and later destroyed |
+| Container platform | ECS on EC2, capacity provider, Auto Scaling Group, ECS-optimized Amazon Linux | ECS service reached steady state during testing |
+| Networking | VPC, two public subnets, ALB, security-group-only app ingress, dynamic ECS host ports | ALB target was healthy; HTTP access was temporarily restricted to one client IPv4 /32 |
+| Recovery | SQLite-consistent S3 backups, SHA-256 sidecar, checksum/database-integrity checks during instance startup | Replacement instance restored the existing `wewatch` monitor and history |
+| Delivery | GitHub Actions, OIDC short-lived credentials, separate plan/apply roles, protected apply environment, encrypted one-day plan artifact | Plan/apply path was exercised; workflows do not use static AWS access keys |
+| Observability | CloudWatch logs, service/ALB/ASG/backup alarms, optional SNS email | Alarm resources exist; end-to-end alarm delivery and each alarm condition still need testing |
+| Cost control | Time-boxed deployment and Terraform teardown | Main destroy reported 19 resources destroyed; orphan and persistent-storage checks remain |
+
+## Demonstrated outcomes
+
+- Deployed Uptime Kuma as an ECS service on EC2 instead of Fargate to learn both orchestration and capacity management.
+- Replaced an EC2 instance through Auto Scaling and observed recovery from an S3 backup, including the previous monitor and history returning.
+- Used a checksum sidecar and SQLite integrity validation before starting ECS against restored data.
+- Exercised a GitHub Actions OIDC plan/apply flow with short-lived AWS credentials, an explicit deploy confirmation, and an environment approval gate.
+- Kept the administration path on Systems Manager Session Manager rather than opening SSH ingress.
+
+**What this project does not claim yet:** HTTPS/TLS, proven SNS delivery, tested alarm thresholds/recovery, exact measured RPO/RTO, AWS Budget alerts, or a completed post-destroy billing/resource audit. The test endpoint used HTTP only and is not running now.
+
+## Before making the repository public
+
+Follow the ordered checklist in [Portfolio readiness](docs/portfolio-readiness.md). The highest-priority items are to scan the **full Git history** for secrets, verify post-destroy AWS resources and persistent buckets, and confirm the repository contains no state files, credentials, plans or private screenshots. The tracked file tree currently contains Terraform source and documentation rather than Terraform state, but the full history still needs a dedicated secret scan.
+
+The configuration includes account-specific backend names, AWS account guards and OIDC trust examples. Do not run it in another account without updating those settings and reviewing the plan. For deployment workflow prerequisites, see [OIDC setup](docs/oidc-setup.md); for recovery evidence and limitations, see the [restore drill](docs/restore-drill.md).
+
+---
 ## Goals
 
 - Learn ECS scheduling, EC2 capacity, and Auto Scaling by using **ECS on EC2**, not Fargate.
