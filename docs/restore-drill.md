@@ -1,6 +1,6 @@
 # Uptime Kuma backup / restore drill
 
-**Status: NOT YET PERFORMED.** This runbook describes how to carry out a real restore test. Do not report the project as having a verified restore until every acceptance check below has been completed against a backup created by a running deployment.
+**Status: SUCCESSFUL RESTORE DEMONSTRATED — 16 October 2026; evidence record incomplete.** The operator manually ran the SSM backup, confirmed the archive and checksum sidecar were uploaded to S3, then replaced the EC2 instance through Auto Scaling. The replacement restored the previous Uptime Kuma data, ECS returned to service, the ALB target became healthy, and the dashboard was accessible. The launch-time script will only start ECS after archive checksum and SQLite integrity checks pass, so successful startup with the old data indicates those checks completed. Exact object/version identifiers, instance IDs, captured checksum/integrity output, and measured RPO/RTO were not saved. This is evidence of a successful restore, but the drill record below remains partially incomplete.
 
 ## Scope and recovery design
 
@@ -158,18 +158,18 @@ Fill this in only after the drill:
 
 | Field | Result |
 |---|---|
-| Date/time (UTC) | NOT RUN |
-| Backup archive key + version ID | NOT RUN |
-| SHA-256 | NOT RUN |
-| SSM backup execution | NOT RUN |
-| Old / replacement EC2 instance IDs | NOT RUN |
-| `PRAGMA integrity_check` result | NOT RUN |
-| Uptime Kuma service healthy after replacement | NOT RUN |
-| Canary monitor present after restore | NOT RUN |
+| Date/time (UTC) | 16 October 2026; exact backup, termination, and restore timestamps not captured |
+| Backup archive key + version ID | Archive and companion checksum sidecar found in S3; exact key/version ID not recorded |
+| SHA-256 | Restore startup completed and prior data was present, indicating checksum validation passed; digest/output not captured |
+| SSM backup execution | Manual backup execution succeeded and uploaded archive + checksum; execution ID not recorded |
+| Old / replacement EC2 instance IDs | Auto Scaling replaced the instance; IDs not recorded |
+| `PRAGMA integrity_check` result | Restore startup completed, indicating SQLite integrity check passed; direct output not captured |
+| Uptime Kuma service healthy after replacement | **PASS** — dashboard accessible and ALB target healthy |
+| Canary monitor present after restore | Existing prior application data was confirmed present; the specifically named `RESTORE-DRILL-CANARY` was not recorded as checked |
 | Measured RPO | NOT MEASURED |
 | Measured RTO | NOT MEASURED |
-| Evidence location | NOT COLLECTED |
-| Outcome | **NOT RUN — restore not yet verified** |
+| Evidence location | Not collected during this run |
+| Outcome | **SUCCESS — restore demonstrated end-to-end; formal evidence record incomplete** |
 
 Target objectives for the first test, to measure rather than assume: RPO under 24 hours and RTO under 30 minutes.
 
