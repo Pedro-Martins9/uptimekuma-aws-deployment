@@ -1,7 +1,7 @@
 provider "aws" {
   region = "eu-west-1"
 
-  allowed_account_ids = ["REPLACE_WITH_AWS_ACCOUNT_ID"]
+  allowed_account_ids = [var.aws_account_id]
 
   default_tags {
     tags = {
