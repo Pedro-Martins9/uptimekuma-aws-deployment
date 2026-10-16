@@ -273,6 +273,8 @@ Earlier apply errors showed missing `ec2:RunInstances`, `elasticloadbalancing:Mo
 
 In **Settings → Secrets and variables → Actions → Variables**, add:
 
+- `AWS_ACCOUNT_ID`: the same 12-digit AWS account ID used in the Terraform variable `aws_account_id`.
+
 - `AWS_TERRAFORM_PLAN_ROLE_ARN`: `arn:aws:iam::<AWS_ACCOUNT_ID>:role/<PLAN_ROLE_NAME>`.
 - `ALERT_EMAIL`: optional email address that should receive alarm notifications.
 - `ALB_ALLOWED_CLIENT_CIDR`: your current public IPv4 address in `/32` notation. Get the address with `curl -4 https://checkip.amazonaws.com`, then append `/32` before saving it. Do not use `0.0.0.0/0`. If your public IP changes, update this variable and run a new plan.
@@ -291,12 +293,13 @@ The SNS email subscription remains pending until its confirmation link is accept
 
 ## 5. Prove the guardrails
 
-1. Run **Terraform validation** and make sure formatting and validation pass for the main, state-bootstrap and backup-infrastructure directories.
-2. From Actions, manually dispatch **Terraform deployment** on `main` with mode `plan`. Confirm it assumes the plan role and produces a plan without changing resources.
-3. Review the plan artifact and summary. Plan artifacts may contain sensitive values; the workflow encrypts the plan artifact and retains it for one day.
-4. Confirm the `aws-deploy` environment has a required reviewer and restricts deployments to `main`. Select target `backup-infra` and mode `plan` first. Review the plan; then select target `backup-infra`, mode `deploy`, and type `DEPLOY`. The apply job must pause for environment approval after the plan is created.
-5. Run the workflow again with target `application` and mode `plan`; review the entire plan. Only choose `deploy` with typed confirmation `DEPLOY` for a deliberate application test.
-6. Verify the expected AWS account in the `aws sts get-caller-identity` step.
-7. Destroy the test stack manually only after inspecting `terraform plan -destroy`. There is no automated destroy job.
+1. Configure `TF_VAR_aws_account_id` for local Terraform commands, or set the equivalent variable input without committing it. Restore the existing state bucket name in the remote backend blocks before any Terraform initialization. In GitHub Actions, configure the `AWS_ACCOUNT_ID` repository variable and both role ARN values above.
+2. Run **Terraform validation** and make sure formatting and validation pass for the main, state-bootstrap and backup-infrastructure directories.
+3. From Actions, manually dispatch **Terraform deployment** on `main` with mode `plan`. Confirm it assumes the plan role and produces a plan without changing resources.
+4. Review the plan artifact and summary. Plan artifacts may contain sensitive values; the workflow encrypts the plan artifact and retains it for one day.
+5. Confirm the `aws-deploy` environment has a required reviewer and restricts deployments to `main`. Select target `backup-infra` and mode `plan` first. Review the plan; then select target `backup-infra`, mode `deploy`, and type `DEPLOY`. The apply job must pause for environment approval after the plan is created.
+6. Run the workflow again with target `application` and mode `plan`; review the entire plan. Only choose `deploy` with typed confirmation `DEPLOY` for a deliberate application test.
+7. Verify the expected AWS account in the `aws sts get-caller-identity` step.
+8. Destroy the test stack manually only after inspecting `terraform plan -destroy`. There is no automated destroy job.
 
 The AWS-side trust provider and IAM roles must be created before this workflow can get credentials. A green YAML validation run alone does not prove OIDC trust or an AWS apply works.
