@@ -85,7 +85,7 @@ Relevant recent commits:
 - Gitleaks scanner pin: `6ee16ce38ad1e8a16136b15eb4e887383303cdab`
 - Gitleaks workflow created; the malformed `.github/workflows/main.yml` fragment was deleted.
 
-The OIDC guide, restore drill, readiness checklist, backend blocks and deploy workflow account guard are generalized. The repository remains private. Before Terraform use, restore the existing bucket name in both remote backend blocks and set `TF_VAR_aws_account_id`.
+The current tracked tree is sanitized; the cost-controls root and evidence-capture runbook are now present. The application stack remains offline and the cost budget is not applied. Remote backend bucket names are placeholders: restore the existing bucket name in each remote backend before Terraform init and set `TF_VAR_aws_account_id`. **Historical cleanup remains a blocker:** older commits contain the AWS account ID and bucket names. Do not make the repository public before a history rewrite and post-rewrite scan.
 
 ## 5. Prioritized next-session plan
 
