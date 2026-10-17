@@ -32,6 +32,9 @@ Validate each root without connecting to the remote state backend:
     terraform -chdir=terraform/backup-infra init -backend=false -input=false -lockfile=readonly
     terraform -chdir=terraform/backup-infra validate -no-color
 
+    terraform -chdir=terraform/cost-controls init -backend=false -input=false -lockfile=readonly
+    terraform -chdir=terraform/cost-controls validate -no-color
+
 These are static configuration checks. They do not deploy resources, prove alarm delivery, or test restore behavior.
 
 ## 2. Post-destroy audit — complete
@@ -71,7 +74,7 @@ If you no longer need the buckets, plan their removal separately and deliberatel
 These items are not required to describe the demonstrated restore, but should remain clearly labelled as outstanding until tested:
 
 - [ ] **Alarm validation:** confirm the SNS email subscription and safely trigger each meaningful CloudWatch alarm, including return to OK. Alarm resources existing in Terraform is not proof that their metric dimensions and thresholds work.
-- [ ] **Cost alerts:** add AWS Budget notifications at 50%, 80% and 100%, then verify delivery.
+- [ ] **Cost alerts:** configure `BUDGET_ALERT_EMAIL`, review the default $10 USD account-wide monthly budget, apply `terraform/cost-controls/`, then verify email delivery. AWS Budget notifications are alerts, not a hard spending cap.
 - [ ] **Transport security:** the temporary ALB endpoint used HTTP restricted to a configured IPv4 /32. If operating the dashboard beyond a short test, add a domain, ACM certificate, HTTPS listener and HTTP-to-HTTPS redirect, or keep the interface private. The application is offline now.
 - [ ] **Restore evidence:** the replacement instance restored the previous monitor configuration/history and returned healthy. Exact S3 version ID, checksum digest, SSM execution ID, direct SQLite PRAGMA integrity_check output and exact first-healthy timestamp were not captured. Do not claim a precise RPO/RTO based on the available timestamps.
 - [ ] **Recovery drill quality:** on a future test deployment, create a temporary canary marker, save sanitized output and capture S3 version/hash/SSM execution ID plus timestamps. Run the drill before destroying the test stack.
