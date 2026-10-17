@@ -117,10 +117,59 @@ test -n "$INSTANCE_ID" && test "$INSTANCE_ID" != "None"
 Verify the ID before continuing. For a measured drill, capture the request timestamp and time until a healthy target appears on the replacement instance (not the retiring instance). The command below initiates replacement while retaining the ASG desired capacity:
 
 ```bash
+set -euo pipefail
+
+AWS_REGION="<AWS_REGION>"
+ASG_NAME="<ASG_NAME>"
+OLD_INSTANCE_ID="$INSTANCE_ID"
+TARGET_GROUP_ARN="$(aws elbv2 describe-target-groups \
+  --names uptimekuma-tg \
+  --region "$AWS_REGION" \
+  --query 'TargetGroups[0].TargetGroupArn' \
+  --output text)"
+
+START_EPOCH="$(date -u +%s)"
+START_UTC="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+printf 'termination_request_start_utc=%s old_instance=%s\n' "$START_UTC" "$OLD_INSTANCE_ID"
+
 aws autoscaling terminate-instance-in-auto-scaling-group \
-  --instance-id "$INSTANCE_ID" \
+  --instance-id "$OLD_INSTANCE_ID" \
   --no-should-decrement-desired-capacity \
-  --region <AWS_REGION>
+  --region "$AWS_REGION"
+
+# Require the replacement instance's target to become healthy, not the retiring
+# instance's target. Timeout after 45 minutes so a failed drill is explicit.
+DEADLINE_EPOCH="$((START_EPOCH + 2700))"
+while [ "$(date -u +%s)" -lt "$DEADLINE_EPOCH" ]; do
+  NEW_INSTANCE_ID="$(aws autoscaling describe-auto-scaling-groups \
+    --auto-scaling-group-names "$ASG_NAME" \
+    --region "$AWS_REGION" \
+    --query "AutoScalingGroups[0].Instances[?LifecycleState=='InService' && InstanceId!='${OLD_INSTANCE_ID}'].InstanceId | [0]" \
+    --output text)"
+
+  if [ -n "$NEW_INSTANCE_ID" ] && [ "$NEW_INSTANCE_ID" != "None" ]; then
+    HEALTHY_PORT="$(aws elbv2 describe-target-health \
+      --target-group-arn "$TARGET_GROUP_ARN" \
+      --region "$AWS_REGION" \
+      --query "TargetHealthDescriptions[?Target.Id=='${NEW_INSTANCE_ID}' && TargetHealth.State=='healthy'] | [0].Target.Port" \
+      --output text)"
+
+    if [ -n "$HEALTHY_PORT" ] && [ "$HEALTHY_PORT" != "None" ]; then
+      END_EPOCH="$(date -u +%s)"
+      END_UTC="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+      RTO_SECONDS="$((END_EPOCH - START_EPOCH))"
+      printf 'replacement_instance=%s healthy_target_port=%s\n' "$NEW_INSTANCE_ID" "$HEALTHY_PORT"
+      printf 'first_healthy_target_utc=%s\nrequest_to_healthy_target_seconds=%s\n' "$END_UTC" "$RTO_SECONDS"
+      break
+    fi
+  fi
+  sleep 5
+done
+
+if [ -z "${RTO_SECONDS:-}" ]; then
+  echo "ERROR: no healthy target on the replacement instance within 45 minutes" >&2
+  exit 1
+fi
 ```
 
 Monitor the Auto Scaling Group and ECS service until the replacement is registered and the service returns to steady state (replace the cluster and service placeholders first):
@@ -175,6 +224,7 @@ Fill this in only after the drill:
 | Existing application data | **PASS** — previous monitor configuration and history were present |
 | Named canary monitor | Not created/checked; prior application data was used as the restore marker |
 | Recovery-time bound | Dashboard was working within approximately 13 minutes 11 seconds of replacement launch, based on available timestamps. This is an upper bound, not an exact RTO. |
+| Termination-request-to-healthy-target time | Not captured in the initial drill; the timing command above records this in seconds for the next drill. |
 | Evidence | Auto Scaling activity-history screenshot; dashboard screenshot; replacement-instance journal message in private operator notes |
 | Outcome | **SUCCESS — backup restore demonstrated end-to-end; exact artifacts/timestamps remain incomplete** |
 
