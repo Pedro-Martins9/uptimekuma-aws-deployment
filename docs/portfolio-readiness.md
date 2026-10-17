@@ -1,6 +1,6 @@
 # Public release and portfolio readiness
 
-**Review date:** 16 October 2026  
+**Review date:** 17 October 2026  
 **Repository state:** private; application stack offline after successful deployment and restore testing.  
 **Completed since the initial checklist:** full-history Gitleaks scan reviewed with no findings reported; Terraform validation workflow passed; teardown audit completed successfully; the separate Terraform-state and application-backup S3 buckets were confirmed to persist.  
 **Purpose:** track the remaining work needed to publish the repository safely and present the project accurately on a CV or portfolio.
