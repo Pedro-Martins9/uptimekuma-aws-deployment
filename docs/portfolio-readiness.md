@@ -44,25 +44,25 @@ The operator confirmed that the post-destroy audit completed successfully: the a
 If you want to independently re-check the persistent buckets in future, these read-only commands are available:
 
     aws s3api head-bucket \
-      --bucket <TFSTATE_BUCKET> \\
+      --bucket <TFSTATE_BUCKET> \
       --region <AWS_REGION>
 
     aws s3api head-bucket \
-      --bucket <APP_BACKUP_BUCKET> \\
+      --bucket <APP_BACKUP_BUCKET> \
       --region <AWS_REGION>
 
     aws s3api list-objects-v2 \
-      --bucket <APP_BACKUP_BUCKET> \\
+      --bucket <APP_BACKUP_BUCKET> \
       --prefix uptimekuma/archives/ \
-      --region <AWS_REGION> \\
-      --query 'Contents[].{Key:Key,LastModified:LastModified,Size:Size}' \
+      --region <AWS_REGION> \
+      --query 'Contents[].{Key:Key,LastModified:LastModified,Size:Size}'
       --output table
 
     aws s3api list-objects-v2 \
-      --bucket <APP_BACKUP_BUCKET> \\
+      --bucket <APP_BACKUP_BUCKET> \
       --prefix uptimekuma/checksums/ \
-      --region <AWS_REGION> \\
-      --query 'Contents[].{Key:Key,LastModified:LastModified,Size:Size}' \
+      --region <AWS_REGION> \
+      --query 'Contents[].{Key:Key,LastModified:LastModified,Size:Size}'
       --output table
 
 Expected decision: retain the state bucket and backup bucket if you intend to preserve the recovery evidence or redeploy. The main application destroy does not manage them. The daily backup and hourly freshness SSM associations belonged to the application stack and were removed during teardown, so automated backups are **not running while the app is offline**.
