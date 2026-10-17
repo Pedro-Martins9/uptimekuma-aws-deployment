@@ -19,7 +19,7 @@ Key components in the tested architecture:
 - ECS bridge networking with container port 3001 and dynamic host-port assignment.
 - Systems Manager for administration; no inbound SSH rule.
 - CloudWatch logs, alarms and optional SNS email subscription.
-- Separate Terraform roots for state-bucket bootstrap, the application, and persistent app-backup storage.
+- Separate Terraform roots for state-bucket bootstrap, the application, persistent app-backup storage, and persistent account-wide cost controls.
 - Daily SQLite-consistent application backup to S3, SHA-256 sidecar, and restore-on-EC2-startup validation.
 - GitHub Actions for Terraform validation, Gitleaks scanning, and a manually gated Terraform plan/apply workflow using AWS OIDC.
 
@@ -71,10 +71,11 @@ Repository file tree currently includes:
 - `docs/oidc-setup.md`
 - `docs/portfolio-readiness.md`
 - `docs/restore-drill.md`
+- `docs/evidence-capture.md`
 - Terraform configuration and provider lock files.
 
 ### Workflows
-- **Terraform validation:** user confirmed the workflow completed successfully for formatting and all three roots.
+- **Terraform validation:** GitHub Actions passed formatting and validation for all four roots (application, bootstrap-state, backup-infra, cost-controls).
 - **Gitleaks:** `.github/workflows/gitleaks.yml` uses Gitleaks Action v3 pinned to a commit SHA and CLI version `8.30.0`; full-history checkout is enabled. User confirmed the full-history Gitleaks scan is clean. This is not proof that a secret was never exposed: rotate any credential suspected to have been committed.
 - **Terraform deployment:** manual dispatch only, main-branch gate, plan role via OIDC, encrypted short-retention plan artifact, explicit `DEPLOY` confirmation, and protected `aws-deploy` environment for apply. The plan/apply path was exercised successfully during the test. No automatic destroy workflow exists.
 
@@ -90,15 +91,17 @@ The OIDC guide, restore drill, readiness checklist, backend blocks and deploy wo
 
 Work in this order. Do not re-run completed security scan or teardown checks unless changes justify re-running them.
 
-### Priority 1 — finish documentation sanitization before publishing
+### Priority 1 — history hygiene before publishing
 - [x] Generalize `docs/oidc-setup.md` with placeholders while preserving the immutable subject-claim structure. Confirm the exact claim format against current GitHub documentation before configuring OIDC.
 - [x] Update `docs/restore-drill.md` to reflect the confirmed teardown audit and persistent buckets; machine-specific identifiers and exact object keys are omitted from the publication copy.
-- [ ] Finish a full-tree publication review. Backend bucket references are placeholders and the AWS account guard is set at runtime; check Git history and all remaining Terraform/workflow values before changing visibility.
-- [x] Inspect the edited docs for contradictions and stale teardown language; re-run a final full-tree review before publication.
+- [x] Scan the current tracked files checked for literal account IDs, concrete state/backup bucket names and instance IDs; none remained in those files.
+- [ ] Rewrite Git history with `git filter-repo` to replace account ID/bucket-name values from older commits. This has not been done. No commits were found for `terraform.tfvars` or `terraform/terraform.tfvars` on `main`; inspected `terraform/security.tf` history contained a prior wildcard CIDR and later the variable, not a personal literal `/32`. Verify all refs after rewriting.
+- [x] Add design decisions, backup-frequency/RPO caveat, state-locking notes, CI run links, cost-controls Terraform and a recovery/evidence capture runbook.
+- [ ] Confirm the budget configuration and notification delivery during the next approved test; do not claim the budget has been applied.
 
 ### Priority 2 — finish the public repository presentation
 - [ ] Add a `LICENSE` only after choosing the intended reuse terms; no license file is currently tracked.
-- [ ] Optionally add sanitized screenshots of architecture, healthy target, approval-gated workflow and restore evidence. Do not include personal e-mail addresses, credentials, or unrelated monitor endpoints.
+- [ ] Add sanitized screenshots/video after the next approved, time-boxed deployment, following `docs/evidence-capture.md`.
 - [ ] Set a short GitHub repository description and useful topics through repository settings.
 - [ ] Once satisfied, make the repository public manually in GitHub: **Settings → General → Danger Zone → Change repository visibility → Make public**. The connected GitHub file tools can update contents but have not exposed a visibility-change action.
 - [ ] Check the public repository in a signed-out/private browser window.
@@ -106,7 +109,7 @@ Work in this order. Do not re-run completed security scan or teardown checks unl
 ### Priority 3 — engineering tasks (not blockers for documenting the completed test)
 - [ ] Deploy temporarily if desired, configure HTTPS with a domain/ACM certificate or keep Uptime Kuma private, and test TLS/redirect behavior. The tested endpoint used HTTP only; the app is not running now.
 - [ ] Verify SNS subscription and safely exercise CloudWatch alarm conditions including return to OK.
-- [ ] Add AWS Budget alerts (for example 50%, 80%, and 100%) and verify notifications.
+- [x] Implemented `terraform/cost-controls/` for account-wide monthly budget alerts at 50%, 80% and 100% actual spend (default USD 10; excludes credits). It is not deployed or tested.
 - [ ] During the next restore drill, collect exact S3 VersionId, checksum digest, SSM execution ID, direct SQLite integrity output and precise timestamps; optionally create a named canary monitor.
 - [ ] Improve and re-test predictable ECS/ASG teardown, which initially required scaling ASG desired capacity to zero and replanning.
 
