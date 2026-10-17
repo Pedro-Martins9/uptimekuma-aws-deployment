@@ -10,10 +10,11 @@
 - [x] **Run and review the full-history Gitleaks scan.** The operator confirmed the scan passed with no findings reported. The workflow `.github/workflows/gitleaks.yml` also continues to scan pushes and pull requests, with scheduled and manual runs available for broader history scans.
 - [ ] **If any credential was ever committed, treat it as exposed.** Revoke or rotate it first. Removing it from the latest tree alone does not remove it from Git history.
 - [x] **Review the current tracked file tree for sensitive artifacts.** No Terraform state files, plan files, tfvars files, private-key files or credential files are present in the current tree. Keep the .terraform.lock.hcl files; those dependency lock files are intentionally tracked. A clean scan is not a guarantee that a secret was never used or committed; rotate any real credential if there is reason to believe it was exposed.
-- [x] **Sanitize supporting documentation.** The OIDC, restore-drill, Terraform backend and deployment workflow examples use placeholders or GitHub variables for account IDs, bucket names, instance IDs and internal monitor names. Configure the `AWS_ACCOUNT_ID` GitHub Actions variable and replace `<TFSTATE_BUCKET>` in both remote backend blocks with the existing state bucket name before running Terraform. Treat this repository as a template until those values are configured.
+- [x] **Sanitize the current tree.** Current tracked docs/workflows/backends no longer contain the AWS account ID, state/backup bucket names, EC2 instance IDs or personal IPv4 CIDR. Before using Terraform, configure `AWS_ACCOUNT_ID` and replace the state-bucket placeholders. This does not remove older values from prior commits.
 - [x] **Complete AWS cleanup and preserve required storage.** The operator confirmed the teardown audit completed successfully and the separate Terraform-state and application-backup S3 buckets still exist. See section 2.
 - [x] **Check workflow results.** The Terraform validation workflow completed successfully, and the full-history Gitleaks scan was reviewed with no findings reported. Re-run these checks after substantive code or workflow changes. The deployment workflow's earlier successful plan/apply is separate from static validation.
-- [ ] **Confirm the protected deploy configuration is intentional.** Check the aws-deploy GitHub Environment, branch restrictions/reviewer approval, OIDC trust conditions, workflow variables and the TFPLAN_ENCRYPTION_KEY secret. Do not add static AWS access keys.
+- [ ] **Rewrite the default-branch history before public release.** The AWS account ID was present in an older committed Terraform provider/backend/workflow revision. The current tree is sanitized, but historical commits are still reachable. Replace historic account ID and bucket-name literals with placeholders using `git filter-repo`, then force-push the rewritten history from an authenticated local clone and verify every branch/tag/ref. Do not treat a clean Gitleaks scan as proof that identifiers are gone.
+- [ ] **Confirm the protected deploy configuration is intentional.** Check the `aws-deploy` GitHub Environment, branch restrictions/reviewer approval, OIDC trust conditions, `AWS_ACCOUNT_ID`, budget variables and `TFPLAN_ENCRYPTION_KEY`. Do not add static AWS access keys.
 
 ### Local checks
 
@@ -55,14 +56,14 @@ If you want to independently re-check the persistent buckets in future, these re
       --bucket <APP_BACKUP_BUCKET> \
       --prefix uptimekuma/archives/ \
       --region <AWS_REGION> \
-      --query 'Contents[].{Key:Key,LastModified:LastModified,Size:Size}'
+      --query 'Contents[].{Key:Key,LastModified:LastModified,Size:Size}' \
       --output table
 
     aws s3api list-objects-v2 \
       --bucket <APP_BACKUP_BUCKET> \
       --prefix uptimekuma/checksums/ \
       --region <AWS_REGION> \
-      --query 'Contents[].{Key:Key,LastModified:LastModified,Size:Size}'
+      --query 'Contents[].{Key:Key,LastModified:LastModified,Size:Size}' \
       --output table
 
 Expected decision: retain the state bucket and backup bucket if you intend to preserve the recovery evidence or redeploy. The main application destroy does not manage them. The daily backup and hourly freshness SSM associations belonged to the application stack and were removed during teardown, so automated backups are **not running while the app is offline**.
@@ -75,11 +76,12 @@ These items are not required to describe the demonstrated restore, but should re
 
 - [ ] **Alarm validation:** confirm the SNS email subscription and safely trigger each meaningful CloudWatch alarm, including return to OK. Alarm resources existing in Terraform is not proof that their metric dimensions and thresholds work.
 - [ ] **Cost alerts:** configure `BUDGET_ALERT_EMAIL`, review the default $10 USD account-wide monthly budget, apply `terraform/cost-controls/`, then verify email delivery. AWS Budget notifications are alerts, not a hard spending cap.
+- [ ] **Actual cost:** after Cost Explorer refreshes, report a project-specific total only if the `Project=uptimekuma` tag is activated for cost allocation. Otherwise report account-wide test-window cost as an upper bound. Be explicit about gross versus credit-offset net cost.
 - [ ] **Transport security:** the temporary ALB endpoint used HTTP restricted to a configured IPv4 /32. If operating the dashboard beyond a short test, add a domain, ACM certificate, HTTPS listener and HTTP-to-HTTPS redirect, or keep the interface private. The application is offline now.
-- [ ] **Restore evidence:** the replacement instance restored the previous monitor configuration/history and returned healthy. Exact S3 version ID, checksum digest, SSM execution ID, direct SQLite PRAGMA integrity_check output and exact first-healthy timestamp were not captured. Do not claim a precise RPO/RTO based on the available timestamps.
+- [ ] **Restore evidence:** use [the evidence capture runbook](evidence-capture.md) to measure request-to-healthy-target time, capture exact S3 version/checksum/SSM execution ID and record database-integrity output. Do not claim exact RPO/RTO based on the first drill's timestamps.
 - [ ] **Recovery drill quality:** on a future test deployment, create a temporary canary marker, save sanitized output and capture S3 version/hash/SSM execution ID plus timestamps. Run the drill before destroying the test stack.
 - [ ] **Teardown reliability:** the previous destroy needed intervention because the Auto Scaling Group still had capacity while ECS was draining. Document a repeatable teardown sequence and test it during a future deployment.
-- [ ] **Optional evidence:** add sanitized screenshots of the architecture, healthy target, GitHub Actions approval gate, alarm delivery and restore result. Ensure screenshots reveal no personal email addresses, credentials, or unrelated monitored endpoints.
+- [ ] **Evidence package:** perform one approved, time-boxed deployment and add sanitized screenshots of ECS service, healthy target, Uptime Kuma, alarm delivery and the approved workflow. Follow `docs/evidence-capture.md`; do not invent a total cost or measured RTO.
 - [ ] **License decision:** no LICENSE file is currently tracked. Choose a license if you intend to grant others reuse rights; do not imply an open-source license that has not been selected.
 
 ## 4. Final public-release steps
