@@ -35,7 +35,7 @@ The application stack was destroyed after the recovery test to control costs. Th
 - The main application stack is offline.
 - The application-root SSM backup and freshness associations were removed with the main stack; scheduled backups do not run while it is offline.
 
-The retained buckets are deliberately managed separately from the main app root. Their actual names are account-specific and remain in the private operational configuration; replace them with placeholders in public-facing docs unless the concrete values are intentionally disclosed. They can continue to incur small S3 storage charges. Do not destroy the state bucket while it is needed by either remote-state root. Do not run routine app teardown from `terraform/bootstrap-state/` or `terraform/backup-infra/`.
+The retained buckets are deliberately managed separately from the main app root. Their actual names are account-specific and remain in the private operational configuration; replace them with placeholders in public-facing docs unless the concrete values are intentionally disclosed. They can continue to incur small S3 storage charges. Do not destroy the state bucket while it is needed by either remote-state root. Do not run routine app teardown from `terraform/bootstrap-state/`, `terraform/backup-infra/` or `terraform/cost-controls/`.
 
 The main backend configuration points to the state bucket and key `uptimekuma/terraform.tfstate`; the backup-infrastructure state key is `uptimekuma/backup-infra.tfstate`. The bootstrap root uses local state unless migrated separately.
 
