@@ -100,7 +100,9 @@ Save the following as an IAM inline policy, for example `<STATE_POLICY_NAME>`. S
         "arn:aws:s3:::<TFSTATE_BUCKET>/uptimekuma/terraform.tfstate",
         "arn:aws:s3:::<TFSTATE_BUCKET>/uptimekuma/terraform.tfstate.tflock",
         "arn:aws:s3:::<TFSTATE_BUCKET>/uptimekuma/backup-infra.tfstate",
-        "arn:aws:s3:::<TFSTATE_BUCKET>/uptimekuma/backup-infra.tfstate.tflock"
+        "arn:aws:s3:::<TFSTATE_BUCKET>/uptimekuma/backup-infra.tfstate.tflock",
+        "arn:aws:s3:::<TFSTATE_BUCKET>/uptimekuma/cost-controls.tfstate",
+        "arn:aws:s3:::<TFSTATE_BUCKET>/uptimekuma/cost-controls.tfstate.tflock"
       ]
     }
   ]
@@ -197,6 +199,19 @@ Save the JSON below as `<APPLY_POLICY_NAME>` and attach it only to `<APPLY_ROLE_
       "Resource": "*"
     },
     {
+      "Sid": "ManageAccountBudgetNotifications",
+      "Effect": "Allow",
+      "Action": [
+        "budgets:CreateBudget", "budgets:UpdateBudget", "budgets:DeleteBudget",
+        "budgets:DescribeBudget", "budgets:DescribeBudgets",
+        "budgets:DescribeNotificationsForBudget", "budgets:DescribeSubscribersForNotification",
+        "budgets:CreateNotification", "budgets:UpdateNotification", "budgets:DeleteNotification",
+        "budgets:CreateSubscriber", "budgets:UpdateSubscriber", "budgets:DeleteSubscriber",
+        "budgets:ListTagsForResource", "budgets:TagResource", "budgets:UntagResource"
+      ],
+      "Resource": "*"
+    },
+    {
       "Sid": "ManageProjectSsmAssociations",
       "Effect": "Allow",
       "Action": [
@@ -274,6 +289,8 @@ Earlier apply errors showed missing `ec2:RunInstances`, `elasticloadbalancing:Mo
 In **Settings → Secrets and variables → Actions → Variables**, add:
 
 - `AWS_ACCOUNT_ID`: the same 12-digit AWS account ID used in the Terraform variable `aws_account_id`.
+- `BUDGET_ALERT_EMAIL`: optional email recipient for the account-wide monthly cost budget. Set it only if you want the budget resource enabled.
+- `MONTHLY_BUDGET_LIMIT_USD`: optional monthly account-wide cost threshold in USD; defaults to `10` in `terraform/cost-controls/`.
 
 - `AWS_TERRAFORM_PLAN_ROLE_ARN`: `arn:aws:iam::<AWS_ACCOUNT_ID>:role/<PLAN_ROLE_NAME>`.
 - `ALERT_EMAIL`: optional email address that should receive alarm notifications.
@@ -298,7 +315,7 @@ The SNS email subscription remains pending until its confirmation link is accept
 3. From Actions, manually dispatch **Terraform deployment** on `main` with mode `plan`. Confirm it assumes the plan role and produces a plan without changing resources.
 4. Review the plan artifact and summary. Plan artifacts may contain sensitive values; the workflow encrypts the plan artifact and retains it for one day.
 5. Confirm the `aws-deploy` environment has a required reviewer and restricts deployments to `main`. Select target `backup-infra` and mode `plan` first. Review the plan; then select target `backup-infra`, mode `deploy`, and type `DEPLOY`. The apply job must pause for environment approval after the plan is created.
-6. Run the workflow again with target `application` and mode `plan`; review the entire plan. Only choose `deploy` with typed confirmation `DEPLOY` for a deliberate application test.
+6. Run target `cost-controls` with mode `plan`; review the account-wide budget and recipient configuration. Deploy it only after confirming the intended email and USD limit. Then run target `application` with mode `plan`; review the entire plan. Only choose `deploy` with typed confirmation `DEPLOY` for a deliberate application test.
 7. Verify the expected AWS account in the `aws sts get-caller-identity` step.
 8. Destroy the test stack manually only after inspecting `terraform plan -destroy`. There is no automated destroy job.
 
