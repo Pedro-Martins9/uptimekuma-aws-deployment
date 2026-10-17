@@ -1,6 +1,6 @@
 # Session handoff — Uptime Kuma AWS portfolio project
 
-**Last updated:** 16 October 2026  
+**Last updated:** 17 October 2026  
 **Repository:** https://github.com/Pedro-Martins9/uptimekuma-aws-deployment  
 **Default branch:** `main`  
 **Current visibility:** private  
@@ -126,4 +126,4 @@ Work in this order. Do not re-run completed security scan or teardown checks unl
 
 ## 7. Quick prompt for the next ChatGPT session
 
-> Continue my Uptime Kuma AWS portfolio project using `docs/session-handoff.md` as the primary handoff and the existing README, OIDC setup, restore-drill, and portfolio-readiness docs as supporting sources. First handle Priority 1: sanitize and reconcile `docs/oidc-setup.md` and `docs/restore-drill.md` for safe publication without breaking the OIDC immutable-subject instructions or overstating test evidence. Make focused commits directly to the existing repo, verify each change, and then summarize what remains before I make the repository public. Do not deploy or destroy AWS resources.
+> Continue the Uptime Kuma AWS portfolio project from this handoff. The application stack is offline. The current tracked tree is sanitized, Terraform validation and Gitleaks are green, and `terraform/cost-controls/` is implemented but not applied. First resolve the publication blocker: earlier Git commits contain the AWS account ID and concrete bucket names. Use an authenticated local clone and `git filter-repo` to rewrite the history, verify all refs and workflow logs, then scan the rewritten history. Keep the repository private until this is complete. Do not deploy AWS resources without explicit approval of the test window and spend.
