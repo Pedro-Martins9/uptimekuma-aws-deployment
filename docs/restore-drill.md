@@ -114,7 +114,7 @@ printf 'Instance to replace: %s\n' "$INSTANCE_ID"
 test -n "$INSTANCE_ID" && test "$INSTANCE_ID" != "None"
 ```
 
-Verify the ID before continuing. Then request an instance replacement while retaining the ASG desired capacity:
+Verify the ID before continuing. For a measured drill, capture the request timestamp and time until a healthy target appears on the replacement instance (not the retiring instance). The command below initiates replacement while retaining the ASG desired capacity:
 
 ```bash
 aws autoscaling terminate-instance-in-auto-scaling-group \
