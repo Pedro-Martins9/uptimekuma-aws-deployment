@@ -68,7 +68,7 @@ jobs:
           # Configure AWS_ACCOUNT_ID as a repository variable; no AWS account ID is embedded here.
           role-session-name: gha-terraform-plan-${{ github.run_id }}
           aws-region: eu-west-1
-          allowed-account-ids: ${{ vars.AWS_ACCOUNT_ID }}
+          allowed-account-ids: "${{ vars.AWS_ACCOUNT_ID }}"
 
       - name: Verify AWS identity
         run: aws sts get-caller-identity
@@ -178,7 +178,7 @@ jobs:
           # Configure AWS_ACCOUNT_ID as a repository variable; no AWS account ID is embedded here.
           role-session-name: gha-terraform-apply-${{ github.run_id }}
           aws-region: eu-west-1
-          allowed-account-ids: ${{ vars.AWS_ACCOUNT_ID }}
+          allowed-account-ids: "${{ vars.AWS_ACCOUNT_ID }}"
 
       - name: Verify AWS identity
         run: aws sts get-caller-identity
