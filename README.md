@@ -83,8 +83,8 @@ The previous restore drill demonstrated that the app's existing data returned af
 
 ## Evidence and CI
 
-- [Terraform formatting and validation — successful run](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/workflows/terraform-validate.yml)
-- [Gitleaks secret scanning — successful workflow history](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/workflows/gitleaks.yml)
+- [Terraform formatting and validation — successful run](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39039712681)
+- [Gitleaks secret scanning — successful run](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39039712620)
 
 The repository includes the workflows and restore-drill record, but the application is currently offline and no short demo video is available. Total project cost has not yet been extracted from Cost Explorer, so no cost figure is claimed.
 
