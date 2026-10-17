@@ -67,11 +67,32 @@ The repository includes three workflows:
 
 The validation workflow has passed, and the full-history Gitleaks scan has been reviewed successfully. The deployment workflow was exercised during the project test. No static AWS access keys are embedded in the workflows.
 
+## Design decisions
+
+- **ECS on EC2 instead of Fargate:** this project was built to learn both container orchestration and the EC2 capacity layer. The trade-off is more responsibility for instance capacity, the ECS agent, launch templates and Auto Scaling.
+- **SQLite with consistent S3 backups instead of a shared filesystem:** a SQLite-consistent snapshot, checksum sidecar and startup integrity check made recovery testable without introducing EFS or an external database. The design uses a single active application task and restore-on-boot; it is not a multi-writer database design.
+- **One active ECS task:** this avoids multiple tasks maintaining independent local SQLite copies. At scale, I would first establish a persistence architecture supported by the application, then test multi-task behavior and availability zones rather than simply increasing desired count.
+- **HTTP-only test endpoint:** the temporary endpoint was restricted to a trusted IPv4 /32 to limit exposure while controlling cost. It is not suitable for a public dashboard. With a domain under my control, the next hardening step is an ACM certificate, HTTPS listener and HTTP-to-HTTPS redirect.
+- **Terraform state locking:** the remote S3 backends use native S3 lock files (`use_lockfile = true`) and per-root state keys; the state bucket uses versioning. The bootstrap root still uses local state unless deliberately migrated.
+
+## Backup schedule and recovery objective
+
+The SSM backup is scheduled daily at **02:05 UTC**. A separate hourly check publishes whether the most recent archive is no more than 26 hours old. The nominal backup interval is about 24 hours, but this is not a guaranteed RPO: the actual recoverable point depends on the age of the latest successful, integrity-checked backup when an incident occurs. Failed or skipped jobs can make the data-loss window longer.
+
+The previous restore drill demonstrated that the app's existing data returned after EC2 replacement. Available timestamps bounded dashboard recovery to about **13 minutes 11 seconds after replacement launch**, but did not record termination-request-to-healthy-target time exactly. Treat that as an observed upper bound from screenshots, not a measured RTO. A future drill should record the termination request and first healthy target timestamps directly.
+
+## Evidence and CI
+
+- [Terraform formatting and validation — successful run](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/workflows/terraform-validate.yml)
+- [Gitleaks secret scanning — successful workflow history](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/workflows/gitleaks.yml)
+
+The repository includes the workflows and restore-drill record, but the application is currently offline and no short demo video is available. Total project cost has not yet been extracted from Cost Explorer, so no cost figure is claimed.
+
 ## Security and known limitations
 
 - The test load balancer used **HTTP only**, restricted to a configured client IPv4 address. HTTPS/TLS was not implemented, and the application is offline. Do not use this temporary configuration to host a public dashboard as-is.
 - CloudWatch alarm resources are defined, but end-to-end SNS delivery and every alarm condition have not been demonstrated.
-- AWS Budget notifications are not yet managed by Terraform.
+- A separate `terraform/cost-controls/` root defines an account-wide monthly USD budget with actual-spend notifications at 50%, 80% and 100%, excluding credit offsets. It is not enabled until `BUDGET_ALERT_EMAIL` is configured, and email delivery has not yet been tested.
 - Exact S3 object-version/checksum evidence and precise RPO/RTO measurements were not captured during the recovery drill.
 - Persistent S3 state and backup storage remain after application teardown. They are intentionally managed separately from the application stack and may continue to incur storage charges.
 
@@ -113,7 +134,7 @@ This repository is a learning project, not a one-click deployment. Before deploy
 1. Install Terraform and AWS CLI, and configure an AWS identity with the permissions required by the chosen workflow.
 2. Review the [OIDC setup guide](docs/oidc-setup.md) if using GitHub Actions. Replace every placeholder and configure the repository variables/secrets described there.
 3. Set the existing state bucket name in both remote backend blocks (`terraform/versions.tf` and `terraform/backup-infra/versions.tf`) before initializing. Set `TF_VAR_aws_account_id` to the expected 12-digit account ID. Do not commit account-specific values.
-4. Bootstrap the Terraform state storage, then apply `terraform/backup-infra/`, and finally plan the main application root in `terraform/`.
+4. Bootstrap or reuse the existing Terraform state bucket; configure and apply `terraform/cost-controls/` if you want persistent account-wide budget alerts; then apply `terraform/backup-infra/`, and finally plan the main application root in `terraform/`.
 5. Review the **entire** Terraform plan before applying. The application requires an allowed client IPv4 CIDR for the temporary HTTP endpoint; never leave an administrative dashboard exposed more broadly than intended.
 
 For recovery-test instructions, see [the restore drill](docs/restore-drill.md). For the remaining hardening and portfolio steps, see [portfolio readiness](docs/portfolio-readiness.md).
