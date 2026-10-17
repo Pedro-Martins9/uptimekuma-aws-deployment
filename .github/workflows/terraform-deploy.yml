@@ -134,7 +134,7 @@ jobs:
       contents: read
       id-token: write
     env:
-      TF_ROOT: ${{ inputs.target == 'backup-infra' && 'terraform/backup-infra' || 'terraform' }}
+      TF_ROOT: ${{ inputs.target == 'backup-infra' && 'terraform/backup-infra' || inputs.target == 'cost-controls' && 'terraform/cost-controls' || 'terraform' }}
       TFPLAN_ENCRYPTION_KEY: ${{ secrets.TFPLAN_ENCRYPTION_KEY }}
     steps:
       - name: Checkout the same commit used for planning
