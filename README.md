@@ -141,7 +141,7 @@ For recovery-test instructions, see [the restore drill](docs/restore-drill.md). 
 
 ### Teardown and costs
 
-The application resources and compute were destroyed after testing. If you deploy a new test stack, inspect the destroy plan and destroy only the main application root after the test. **Do not destroy the state-storage or backup-infrastructure roots as part of routine application teardown.** Check EC2, load balancing, EBS, CloudWatch and billing after teardown. The retained S3 buckets are separate and can continue to incur small charges.
+The application resources and compute were destroyed after testing. If you deploy a new test stack, inspect the destroy plan and destroy only the main application root after the test. **Do not destroy the state-storage, backup-infrastructure or cost-controls roots as part of routine application teardown.** Check EC2, load balancing, EBS, CloudWatch and billing after teardown. The retained S3 buckets are separate and can continue to incur small charges.
 
 ## Technologies
 
@@ -151,4 +151,5 @@ AWS ECS on EC2, EC2 Auto Scaling, VPC, Application Load Balancer, IAM, Systems M
 
 - [OIDC setup and GitHub Actions permissions](docs/oidc-setup.md)
 - [Backup and restore drill evidence](docs/restore-drill.md)
+- [Evidence capture runbook](docs/evidence-capture.md)
 - [Portfolio readiness and remaining improvements](docs/portfolio-readiness.md)
