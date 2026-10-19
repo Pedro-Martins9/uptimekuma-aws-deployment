@@ -1,8 +1,8 @@
 # Public release and portfolio readiness
 
 **Review date:** 19 October 2026  
-**Repository state:** private; application stack offline after successful deployment and restore testing.  
-**Portfolio publication status: READY TO PUBLISH.** The application remains offline/destroyed; this status means the repository is ready to be shared as an honest portfolio project, not that every future engineering improvement is complete.  
+**Repository state:** public; application stack offline after successful deployment and restore testing.  
+**Portfolio publication status: PUBLISHED.** GitHub repository metadata confirms public visibility. The application remains offline/destroyed; publication does not imply that every follow-up engineering improvement is complete.  
 **Security gate reviewed:** the operator reports a clean full-history Gitleaks scan; GitHub reachable-history inspection covered all 138 commits and found no literal AWS account ID or state/backup bucket name; the current tree is sanitized.  
 **Purpose:** track the remaining work needed to publish the repository safely and present the project accurately on a CV or portfolio.
 
@@ -85,17 +85,17 @@ These items improve the deployment or evidence package but are not required to p
 - [ ] **Evidence package:** perform one approved, time-boxed deployment and add sanitized screenshots of ECS service, healthy target, Uptime Kuma, alarm delivery and the approved workflow. Follow `docs/evidence-capture.md`; do not invent a total cost or measured RTO.
 - [ ] **License decision:** no LICENSE file is currently tracked. Choose a license if you intend to grant others reuse rights; do not imply an open-source license that has not been selected.
 
-## 4. Publish the repository — operator actions
+## 4. Post-publication housekeeping
 
-The source is ready to publish. These final GitHub UI actions are still manual:
+The repository is now public; GitHub's repository metadata confirms `visibility: public`. The remaining tasks are presentation checks and metadata, not a visibility blocker.
 
-- [ ] Update the GitHub repository description to something concise, e.g. **"Terraform-managed Uptime Kuma on ECS/EC2 with OIDC delivery, CloudWatch monitoring and S3 backup/restore."**
-- [ ] Add relevant repository topics such as terraform, aws, ecs, devops, github-actions, oidc, and infrastructure-as-code.
-- [x] Review the README top section. It correctly states that the stack is **offline/destroyed**, distinguishes demonstrated restore behavior from planned work, and does not claim HTTPS, tested alarm delivery, total cost or exact RPO/RTO measurements. Do a quick final review as part of the publication action.
-- [ ] Change visibility manually in GitHub: **Repository → Settings → General → Danger Zone → Change repository visibility → Make public**. Recheck the selected repository name before confirming.
-- [ ] After publication, open the repository in a signed-out/private browser window and verify the README, docs, workflow files and links render as expected.
+- [x] **Change repository visibility to public.** Completed 19 October 2026 and verified through GitHub repository metadata.
+- [ ] **Verify public rendering while signed out.** Open the repository in a private/signed-out browser window and check the README, docs, workflow files, architecture diagram and relative links. API metadata confirms public visibility, but the signed-out browser review has not been independently confirmed here.
+- [ ] **Set a repository description.** The current GitHub metadata has an empty description. Suggested text: **"Terraform-managed Uptime Kuma on ECS/EC2 with OIDC delivery, CloudWatch monitoring and S3 backup/restore."**
+- [ ] **Add repository topics.** No topics are currently configured. Suggested topics: `aws`, `terraform`, `ecs`, `devops`, `github-actions`, `oidc`, and `infrastructure-as-code`.
+- [ ] **Make a license decision.** No `LICENSE` file is tracked. Add a license only if you intend to grant reuse rights; leaving it unlicensed is also a deliberate choice. This is not a blocker to the repository being public.
 
-The current GitHub connection available during this review can read and edit repository files, but it does not expose a repository-visibility mutation. The repository therefore remains private until the visibility step above is completed manually.
+Repository settings such as the description and topics must be changed manually; the available GitHub connection used for this review can read and update repository files but does not expose those settings for mutation.
 
 ## 5. Accurate resume / portfolio wording
 
