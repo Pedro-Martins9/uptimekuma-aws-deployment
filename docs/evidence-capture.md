@@ -7,7 +7,7 @@ Use this checklist during one deliberately time-boxed test deployment. The appli
 - [ ] Agree the test window and acceptable spend before applying anything. Review the entire Terraform plan and confirm the target AWS account.
 - [ ] Configure the existing remote-state bucket name in each backend block and set `TF_VAR_aws_account_id`. For GitHub Actions, configure `AWS_ACCOUNT_ID`, the role ARNs, `TFPLAN_ENCRYPTION_KEY`, `BUDGET_ALERT_EMAIL` and (if needed) `MONTHLY_BUDGET_LIMIT_USD`.
 - [ ] Use a single trusted client IPv4 address in `/32` notation. Do not commit the address or put it in screenshots.
-- [ ] If a domain is available, decide whether the test includes ACM/HTTPS. Without a domain, keep the HTTP endpoint restricted to the trusted IP and report HTTPS as an outstanding limitation.
+- [ ] A domain is available: `pedromartins9.me`. The proposed hostname for the dashboard is `uptime.pedromartins9.me`, pending confirmation and DNS setup. Confirm the DNS provider (Route 53 or external) before editing DNS automation. Request an ACM public certificate in `eu-west-1`, add the ACM-provided DNS-validation CNAME, wait for issuance, configure the ALB HTTPS listener on 443, redirect HTTP on 80 to HTTPS, and add the appropriate DNS record pointing the hostname to the ALB. Keep the dashboard ingress restricted to the trusted IPv4 `/32` unless a separate public-access design is explicitly approved.
 - [ ] Record the start time in UTC, the tested commit SHA, region, and planned teardown time in private notes. Do not publish AWS account IDs, ARNs, IP addresses, email addresses, full target URLs, or monitor names that reveal private details.
 
 ## Screenshots to capture
