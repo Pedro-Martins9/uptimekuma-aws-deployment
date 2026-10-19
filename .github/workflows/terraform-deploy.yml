@@ -44,6 +44,7 @@ jobs:
     env:
       TF_ROOT: ${{ inputs.target == 'backup-infra' && 'terraform/backup-infra' || inputs.target == 'cost-controls' && 'terraform/cost-controls' || 'terraform' }}
       TF_VAR_domain_name: ${{ vars.UPTIME_KUMA_DOMAIN_NAME || 'uptime.pedromartins9.me' }}
+      TF_VAR_acm_certificate_lookup_domain: ${{ vars.ACM_CERTIFICATE_LOOKUP_DOMAIN || vars.UPTIME_KUMA_DOMAIN_NAME || 'uptime.pedromartins9.me' }}
     steps:
       - name: Checkout the selected main-branch commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -131,6 +132,7 @@ jobs:
     env:
       TF_ROOT: ${{ inputs.target == 'backup-infra' && 'terraform/backup-infra' || inputs.target == 'cost-controls' && 'terraform/cost-controls' || 'terraform' }}
       TF_VAR_domain_name: ${{ vars.UPTIME_KUMA_DOMAIN_NAME || 'uptime.pedromartins9.me' }}
+      TF_VAR_acm_certificate_lookup_domain: ${{ vars.ACM_CERTIFICATE_LOOKUP_DOMAIN || vars.UPTIME_KUMA_DOMAIN_NAME || 'uptime.pedromartins9.me' }}
       TFPLAN_ENCRYPTION_KEY: ${{ secrets.TFPLAN_ENCRYPTION_KEY }}
     steps:
       - name: Checkout the same commit used for planning
