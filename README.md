@@ -100,6 +100,7 @@ The repository includes the workflows and restore-drill record, but the applicat
 
 ~~~text
 .
+├── LICENSE
 ├── .github/workflows/
 │   ├── gitleaks.yml
 │   ├── terraform-deploy.yml
@@ -146,6 +147,10 @@ The application resources and compute were destroyed after testing. If you deplo
 ## Technologies
 
 AWS ECS on EC2, EC2 Auto Scaling, VPC, Application Load Balancer, IAM, Systems Manager, CloudWatch, SNS, S3, SQLite, Terraform, GitHub Actions, OIDC and Gitleaks.
+
+## License
+
+This project is licensed under the [Apache License 2.0](LICENSE). The license applies to this project's original work; third-party tools and dependencies remain subject to their own licenses.
 
 ## Further reading
 
