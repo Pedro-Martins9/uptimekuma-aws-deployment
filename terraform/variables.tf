@@ -15,7 +15,6 @@ variable "alert_email" {
   nullable    = true
 }
 
-
 variable "domain_name" {
   description = "Fully qualified hostname used for Uptime Kuma HTTPS. The ACM certificate in eu-west-1 must be ISSUED and cover this hostname."
   type        = string
