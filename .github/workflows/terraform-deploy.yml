@@ -25,11 +25,6 @@ on:
         required: true
         type: string
         default: "NO"
-      allowed_client_ipv4_cidr:
-        description: "Optional override for target=application. Use your current public IPv4 address followed by /32; blank uses ALB_ALLOWED_CLIENT_CIDR."
-        required: false
-        type: string
-        default: ""
 
 permissions:
   contents: read
@@ -83,7 +78,6 @@ jobs:
           TF_VAR_alert_email: ${{ inputs.target == 'application' && vars.ALERT_EMAIL || '' }}
           TF_VAR_budget_alert_email: ${{ inputs.target == 'cost-controls' && vars.BUDGET_ALERT_EMAIL || '' }}
           TF_VAR_monthly_budget_limit_usd: ${{ inputs.target == 'cost-controls' && (vars.MONTHLY_BUDGET_LIMIT_USD || '10') || '' }}
-          TF_VAR_allowed_client_ipv4_cidr: ${{ inputs.target == 'application' && (inputs.allowed_client_ipv4_cidr || vars.ALB_ALLOWED_CLIENT_CIDR) || '' }}
         run: terraform -chdir="$TF_ROOT" plan -input=false -no-color -out="$RUNNER_TEMP/tfplan"
 
       - name: Write plan review and summary
