@@ -24,3 +24,14 @@ variable "allowed_client_ipv4_cidr" {
     error_message = "allowed_client_ipv4_cidr must be one public IPv4 address in /32 CIDR notation, for example the output of curl -4 https://checkip.amazonaws.com followed by /32."
   }
 }
+
+variable "domain_name" {
+  description = "Fully qualified hostname used for Uptime Kuma HTTPS. The ACM certificate in eu-west-1 must be ISSUED and cover this hostname."
+  type        = string
+  default     = "uptime.pedromartins9.me"
+
+  validation {
+    condition     = length(trimspace(var.domain_name)) > 0 && !contains(split(".", trimspace(var.domain_name)), "")
+    error_message = "domain_name must be a non-empty fully qualified DNS hostname without empty labels."
+  }
+}
