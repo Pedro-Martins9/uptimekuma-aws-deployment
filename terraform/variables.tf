@@ -15,6 +15,13 @@ variable "alert_email" {
   nullable    = true
 }
 
+variable "acm_certificate_lookup_domain" {
+  description = "Optional exact ACM primary domain to search for. The selected ISSUED certificate must also cover domain_name; leave null to search using domain_name itself."
+  type        = string
+  default     = null
+  nullable    = true
+}
+
 variable "domain_name" {
   description = "Fully qualified hostname used for Uptime Kuma HTTPS. The ACM certificate in eu-west-1 must be ISSUED and cover this hostname."
   type        = string
