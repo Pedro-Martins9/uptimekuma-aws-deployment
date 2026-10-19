@@ -37,7 +37,7 @@ Use PNG screenshots that show enough of the AWS/GitHub console to establish the 
 4. **Recovery proof:** replacement-instance restore-success log and the restored dashboard/monitor history.
 5. **Alarm delivery:** the test alarm email with identifying details redacted, plus CloudWatch showing the alarm returning to OK.
 6. **Pipeline:** successful GitHub Actions validation and the reviewed, approval-gated deployment run.
-7. **HTTPS, if implemented:** validated ACM certificate, HTTPS listener and HTTP-to-HTTPS redirect.
+7. **HTTPS deployment evidence:** capture the issued ACM certificate, HTTPS listener, HTTP-to-HTTPS redirect, public DNS resolution and successful HTTPS access after the approved apply.
 8. **Cost evidence:** Cost Explorer date range, cost metric and tag/service filter, with billing-account details redacted where appropriate.
 
 Keep unredacted operational evidence privately; only publish the sanitized copies.
