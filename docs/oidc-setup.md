@@ -294,9 +294,7 @@ In **Settings → Secrets and variables → Actions → Variables**, add:
 
 - `AWS_TERRAFORM_PLAN_ROLE_ARN`: `arn:aws:iam::<AWS_ACCOUNT_ID>:role/<PLAN_ROLE_NAME>`.
 - `ALERT_EMAIL`: optional email address that should receive alarm notifications.
-- `ALB_ALLOWED_CLIENT_CIDR`: your current public IPv4 address in `/32` notation. Get the address with `curl -4 https://checkip.amazonaws.com`, then append `/32` before saving it. Do not use `0.0.0.0/0`. If your public IP changes, update this variable and run a new plan.
-
-The **Terraform deployment** workflow also has an optional `allowed_client_ipv4_cidr` input when you manually run it. Enter your current IPv4 address followed by `/32` there to override the repository variable for that run. The direct input takes precedence. If you recently edited a variable, start a **new workflow run** after saving it rather than re-running an old failed run.
+No ALB client-CIDR variable is required. The intended dashboard is internet-accessible on ALB IPv4 ports 80 and 443, and HTTP redirects to HTTPS. ECS dynamic host ports remain accessible only from the ALB security group. Because the Uptime Kuma login page will be public, use a strong, unique admin password and verify the login/setup flow during the test deployment. If you change a repository variable such as `UPTIME_KUMA_DOMAIN_NAME`, start a **new workflow run** after saving it rather than re-running an old failed run.
 
 In **Settings → Secrets and variables → Actions → Secrets**, add `TFPLAN_ENCRYPTION_KEY`. Generate a strong random value locally (for example, with `openssl rand -base64 48`), store it in a password manager, then add the same value as the GitHub Actions secret. **Never commit or paste this value into issues, logs, or chat.** The deployment workflow encrypts the saved Terraform plan before uploading it as a short-retention artifact.
 
