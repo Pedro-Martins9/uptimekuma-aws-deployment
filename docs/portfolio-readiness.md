@@ -4,7 +4,7 @@
 **Repository state:** public; application stack offline after successful deployment and restore testing.  
 **Portfolio publication status: PUBLISHED.** GitHub repository metadata confirms public visibility. The application remains offline/destroyed; publication does not imply that every follow-up engineering improvement is complete.  
 **Security gate reviewed:** the operator reports a clean full-history Gitleaks scan; GitHub reachable-history inspection covered all 138 commits and found no literal AWS account ID or state/backup bucket name; the current tree is sanitized.  
-**Purpose:** track the remaining work needed to publish the repository safely and present the project accurately on a CV or portfolio.
+**Purpose:** track remaining portfolio presentation and engineering hardening work now that the repository is public.
 
 ## 1. Publication security gate — PASS
 
@@ -83,7 +83,6 @@ These items improve the deployment or evidence package but are not required to p
 - [ ] **Recovery drill quality:** on a future test deployment, create a temporary canary marker, save sanitized output and capture S3 version/hash/SSM execution ID plus timestamps. Run the drill before destroying the test stack.
 - [ ] **Teardown reliability:** the previous destroy needed intervention because the Auto Scaling Group still had capacity while ECS was draining. Document a repeatable teardown sequence and test it during a future deployment.
 - [ ] **Evidence package:** perform one approved, time-boxed deployment and add sanitized screenshots of ECS service, healthy target, Uptime Kuma, alarm delivery and the approved workflow. Follow `docs/evidence-capture.md`; do not invent a total cost or measured RTO.
-- [ ] **License decision:** no LICENSE file is currently tracked. Choose a license if you intend to grant others reuse rights; do not imply an open-source license that has not been selected.
 
 ## 4. Post-publication housekeeping
 
@@ -93,7 +92,7 @@ The repository is now public; GitHub's repository metadata confirms `visibility:
 - [ ] **Verify public rendering while signed out.** Open the repository in a private/signed-out browser window and check the README, docs, workflow files, architecture diagram and relative links. API metadata confirms public visibility, but the signed-out browser review has not been independently confirmed here.
 - [ ] **Set a repository description.** The current GitHub metadata has an empty description. Suggested text: **"Terraform-managed Uptime Kuma on ECS/EC2 with OIDC delivery, CloudWatch monitoring and S3 backup/restore."**
 - [ ] **Add repository topics.** No topics are currently configured. Suggested topics: `aws`, `terraform`, `ecs`, `devops`, `github-actions`, `oidc`, and `infrastructure-as-code`.
-- [ ] **Make a license decision.** No `LICENSE` file is tracked. Add a license only if you intend to grant reuse rights; leaving it unlicensed is also a deliberate choice. This is not a blocker to the repository being public.
+- [x] **Add a license.** Added the Apache License 2.0 in the root `LICENSE` file and linked it from the README. It licenses this project's original work; third-party tools and dependencies remain under their respective licenses.
 
 Repository settings such as the description and topics must be changed manually; the available GitHub connection used for this review can read and update repository files but does not expose those settings for mutation.
 
