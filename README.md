@@ -112,7 +112,9 @@ The repository includes the workflows and restore-drill record, but the applicat
 └── terraform/
     ├── bootstrap-state/   # One-time state-bucket bootstrap
     ├── backup-infra/      # Persistent backup bucket, separate root
+    ├── certificate.tf     # Look up the issued ACM certificate for the domain
     ├── backup.tf          # Scheduled backup and freshness checks
+    ├── outputs.tf         # ALB DNS name and zone ID for external DNS
     ├── capacity.tf        # Auto Scaling and ECS capacity provider
     ├── compute.tf         # Launch template and restore-on-boot
     ├── ecs.tf
