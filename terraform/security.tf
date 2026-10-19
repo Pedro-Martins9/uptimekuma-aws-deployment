@@ -1,5 +1,5 @@
 # Public entry point: the Application Load Balancer.
-# HTTP and HTTPS access remain restricted to the configured trusted client IPv4 /32.
+# Public IPv4 web traffic is allowed only on ports 80 and 443; ECS host ports are not public.
 resource "aws_security_group" "alb" {
   name        = "uptimekuma-alb-sg"
   description = "Allow public IPv4 HTTP-to-HTTPS redirect and HTTPS access to the ALB"
