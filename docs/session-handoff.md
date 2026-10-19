@@ -1,12 +1,12 @@
 # Session handoff — Uptime Kuma AWS portfolio project
 
-**Last updated:** 17 October 2026  
+**Last updated:** 19 October 2026  
 **Repository:** https://github.com/Pedro-Martins9/uptimekuma-aws-deployment  
 **Default branch:** `main`  
-**Current visibility:** private  
-**Current app status:** application infrastructure destroyed after testing; only the separate state and backup storage remain.
+**Current visibility:** private; source is **ready to publish** according to `docs/portfolio-readiness.md`  
+**Current app status:** application stack destroyed after successful deployment and restore testing; only separate Terraform state and application-backup S3 storage remain.
 
-Use this document as the restart point for a future ChatGPT session. It records the current state and ordered next steps. Do not assume the app is running or deploy anything without reviewing the plan and confirming the intended spend.
+Use this document as the restart point for a future ChatGPT session. It records the current state and ordered next steps. The current repository decision is **READY TO PUBLISH** as an honest portfolio project; publication itself remains a manual GitHub visibility change. This is not a claim that every engineering enhancement is finished. Do not assume the app is running or deploy anything without reviewing the plan and confirming the intended spend.
 
 ## 1. Project goal and design
 
@@ -35,7 +35,7 @@ The application stack was destroyed after the recovery test to control costs. Th
 - The main application stack is offline.
 - The application-root SSM backup and freshness associations were removed with the main stack; scheduled backups do not run while it is offline.
 
-The retained buckets are deliberately managed separately from the main app root. Their actual names are account-specific and remain in the private operational configuration; replace them with placeholders in public-facing docs unless the concrete values are intentionally disclosed. They can continue to incur small S3 storage charges. Do not destroy the state bucket while it is needed by either remote-state root. Do not run routine app teardown from `terraform/bootstrap-state/`, `terraform/backup-infra/` or `terraform/cost-controls/`.
+The retained buckets are deliberately managed separately from the main app root. Their actual names are account-specific and must stay out of public-facing docs. The GitHub tree uses placeholders. They can continue to incur S3 storage charges; the exact current cost has not been measured here. Do not destroy the state bucket while it is needed by either remote-state root. Do not run routine app teardown from `terraform/bootstrap-state/`, `terraform/backup-infra/` or `terraform/cost-controls/`.
 
 The main backend configuration points to the state bucket and key `uptimekuma/terraform.tfstate`; the backup-infrastructure state key is `uptimekuma/backup-infra.tfstate`. The bootstrap root uses local state unless migrated separately.
 
@@ -79,39 +79,31 @@ Repository file tree currently includes:
 - **Gitleaks:** `.github/workflows/gitleaks.yml` uses Gitleaks Action v3 pinned to a commit SHA and CLI version `8.30.0`; full-history checkout is enabled. User confirmed the full-history Gitleaks scan is clean. This is not proof that a secret was never exposed: rotate any credential suspected to have been committed.
 - **Terraform deployment:** manual dispatch only, main-branch gate, plan role via OIDC, encrypted short-retention plan artifact, explicit `DEPLOY` confirmation, and protected `aws-deploy` environment for apply. The plan/apply path was exercised successfully during the test. No automatic destroy workflow exists.
 
-Relevant recent commits:
-- README simplified/sanitized: `3e38def95954b9161bf5d90a85ade195b2145a35`
-- Readiness checklist updated after user confirmed cleanup/security results: `f0870e31727351d5cfc6e8f764048de2b7c98df1`
-- Gitleaks scanner pin: `6ee16ce38ad1e8a16136b15eb4e887383303cdab`
-- Gitleaks workflow created; the malformed `.github/workflows/main.yml` fragment was deleted.
+Latest publication-readiness update: [commit `bd505d043bcaebfb8aaeb802468ceb93db968b6b`](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/commit/bd505d043bcaebfb8aaeb802468ceb93db968b6b). The authoritative checklist is [`docs/portfolio-readiness.md`](portfolio-readiness.md), which now states **READY TO PUBLISH**.
 
-The current tracked tree is sanitized; the cost-controls root and evidence-capture runbook are now present. The application stack remains offline and the cost budget is not applied. Remote backend bucket names are placeholders: restore the existing bucket name in each remote backend before Terraform init and set `TF_VAR_aws_account_id`. **Reachable-history audit completed 19 October 2026:** I checked all 138 commits reachable from `main` via GitHub's commit API and found no concrete 12-digit AWS account ID or literal state/backup bucket name in the commit diffs. GitHub's refs endpoint shows only `refs/heads/main`, with no tag refs. The operator also reports a clean `gitleaks detect` scan. No further rewrite was performed because the audit found no targeted literals. This does not erase copies in local clones or guarantee immediate removal of GitHub's unreachable-object caches; re-scan a local mirror before changing repository visibility.
+**Security and history status (19 October 2026):** the current tracked tree uses placeholders for account-specific values. I inspected the diffs of all 138 commits reachable from `main` through GitHub's API for concrete 12-digit AWS account IDs and literal state/backup bucket names; none were found. GitHub's refs endpoint exposed only `refs/heads/main`, with no tag refs. The operator confirmed that `gitleaks detect` returned no findings. No further force-push/history rewrite was performed because this reachable-history audit found no targeted literals to remove. This does not erase copies in local clones or guarantee immediate removal of GitHub's unreachable-object caches. Keep old local clones private and do not restore removed identifiers. Do not leave the old 'history cleanup is a publication blocker' wording in future docs.
 
 ## 5. Prioritized next-session plan
 
-Work in this order. Do not re-run completed security scan or teardown checks unless changes justify re-running them.
+The publication security gate is marked PASS in `docs/portfolio-readiness.md`. Do not repeat completed history or teardown checks unless new commits or evidence justify doing so.
 
-### Priority 1 — history hygiene before publishing
-- [x] Generalize `docs/oidc-setup.md` with placeholders while preserving the immutable subject-claim structure. Confirm the exact claim format against current GitHub documentation before configuring OIDC.
-- [x] Update `docs/restore-drill.md` to reflect the confirmed teardown audit and persistent buckets; machine-specific identifiers and exact object keys are omitted from the publication copy.
-- [x] Scan the current tracked files checked for literal account IDs, concrete state/backup bucket names and instance IDs; none remained in those files.
-- [x] Audit all 138 commits reachable from `main` for concrete AWS account IDs and static state/backup bucket names; none were found in the commit diffs. GitHub currently exposes only `refs/heads/main` and no tag refs, and the operator reports a clean `gitleaks detect` scan. Re-scan a local mirror before changing repository visibility, as this audit cannot clear local clones or GitHub's unreachable-object caches. No forced history rewrite was performed because no targeted literals remained in reachable history. No commits were found for `terraform.tfvars` or `terraform/terraform.tfvars` on `main`; inspected `terraform/security.tf` history contained a prior wildcard CIDR and later the variable, not a personal literal `/32`.
-- [x] Add design decisions, backup-frequency/RPO caveat, state-locking notes, CI run links, cost-controls Terraform and a recovery/evidence capture runbook.
-- [ ] Confirm the budget configuration and notification delivery during the next approved test; do not claim the budget has been applied.
+### Priority 1 — complete the manual publication steps
+- [x] Sanitize the current tracked tree and audit the 138 commits reachable from `main`; no concrete AWS account ID or static state/backup bucket names were found in commit diffs.
+- [x] Confirm the operator-reported full-history Gitleaks scan has no findings.
+- [x] Update `docs/portfolio-readiness.md` to **READY TO PUBLISH**, distinguish publication blockers from follow-up engineering work, and retain an accurate offline/destroyed app status.
+- [ ] Decide whether to add a `LICENSE`. There is no license file; do not imply reuse rights until the intended terms are chosen. This is a licensing decision, not a technical readiness failure.
+- [ ] Set a concise repository description and useful topics in GitHub repository settings.
+- [ ] Make the repository public manually in GitHub: **Settings → General → Danger Zone → Change repository visibility → Make public**. The connected GitHub tools can edit repository contents but cannot change visibility.
+- [ ] After publication, inspect the repository in a signed-out/private browser window and verify that the README, docs and links render.
 
-### Priority 2 — finish the public repository presentation
-- [ ] Add a `LICENSE` only after choosing the intended reuse terms; no license file is currently tracked.
-- [ ] Add sanitized screenshots/video after the next approved, time-boxed deployment, following `docs/evidence-capture.md`.
-- [ ] Set a short GitHub repository description and useful topics through repository settings.
-- [ ] Once satisfied, make the repository public manually in GitHub: **Settings → General → Danger Zone → Change repository visibility → Make public**. The connected GitHub file tools can update contents but have not exposed a visibility-change action.
-- [ ] Check the public repository in a signed-out/private browser window.
-
-### Priority 3 — engineering tasks (not blockers for documenting the completed test)
-- [ ] Deploy temporarily if desired, configure HTTPS with a domain/ACM certificate or keep Uptime Kuma private, and test TLS/redirect behavior. The tested endpoint used HTTP only; the app is not running now.
-- [ ] Verify SNS subscription and safely exercise CloudWatch alarm conditions including return to OK.
-- [x] Implemented `terraform/cost-controls/` for account-wide monthly budget alerts at 50%, 80% and 100% actual spend (default USD 10; excludes credits). It is not deployed or tested.
-- [ ] During the next restore drill, collect exact S3 VersionId, checksum digest, SSM execution ID, direct SQLite integrity output and precise timestamps; optionally create a named canary monitor.
-- [ ] Improve and re-test predictable ECS/ASG teardown, which initially required scaling ASG desired capacity to zero and replanning.
+### Priority 2 — engineering and evidence follow-ups (not publication blockers)
+- [ ] Cost controls: `terraform/cost-controls/` defines account-wide monthly budget alerts at 50%, 80% and 100% actual spend (default USD 10; credit offsets excluded). It is not applied or tested; do not claim active alerting.
+- [ ] Alarm validation: verify SNS subscription and safely exercise meaningful CloudWatch alarm conditions including return to OK.
+- [ ] Cost reporting: extract Cost Explorer data after refresh and state whether a reported figure is gross or credit-offset net. No project cost total is currently verified.
+- [ ] Transport security: the test endpoint used HTTP restricted to a configured IPv4 `/32`; if redeploying for ongoing use, add domain/ACM/HTTPS and redirect, or keep the dashboard private.
+- [ ] Next restore drill: capture exact S3 VersionId, checksum digest, SSM execution ID, direct SQLite integrity output, and precise request-to-healthy-target timestamps; optionally create a canary monitor.
+- [ ] Improve and retest predictable ECS/ASG teardown, which initially required scaling ASG desired capacity to zero and replanning.
+- [ ] Add sanitized screenshots/video after an approved, time-boxed deployment, following `docs/evidence-capture.md`. This is helpful portfolio evidence but not required to publish the current honest write-up.
 
 ## 6. Technical guardrails
 
@@ -126,4 +118,4 @@ Work in this order. Do not re-run completed security scan or teardown checks unl
 
 ## 7. Quick prompt for the next ChatGPT session
 
-> Continue the Uptime Kuma AWS portfolio project from this handoff. The application stack is offline. The current tracked tree is sanitized, Terraform validation and Gitleaks are green, and `terraform/cost-controls/` is implemented but not applied. First resolve the publication blocker: earlier Git commits contain the AWS account ID and concrete bucket names. Use an authenticated local clone and `git filter-repo` to rewrite the history, verify all refs and workflow logs, then scan the rewritten history. Keep the repository private until this is complete. Do not deploy AWS resources without explicit approval of the test window and spend.
+> Continue the Uptime Kuma AWS portfolio project from this handoff. The application stack is offline/destroyed and the separate Terraform state and app-backup buckets remain. `docs/portfolio-readiness.md` says **READY TO PUBLISH**: the current tree is sanitized, the operator reports a clean full-history Gitleaks scan, and GitHub's reachable-history audit covered all 138 commits with no literal AWS account ID or static state/backup bucket names found. Do not re-introduce a history-rewrite blocker without new evidence. Remaining publication actions are manual GitHub settings: description/topics, decide on a LICENSE, change visibility to public, then inspect while signed out. HTTPS, alarm delivery, precise RPO/RTO, evidence video and cost extraction remain follow-up work, not publication blockers. Do not deploy AWS resources without explicit approval of the test window and spend.
