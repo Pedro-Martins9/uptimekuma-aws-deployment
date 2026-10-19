@@ -3,10 +3,10 @@
 **Last updated:** 19 October 2026  
 **Repository:** https://github.com/Pedro-Martins9/uptimekuma-aws-deployment  
 **Default branch:** `main`  
-**Current visibility:** private; source is **ready to publish** according to `docs/portfolio-readiness.md`  
+**Current visibility:** public (verified through GitHub repository metadata)  
 **Current app status:** application stack destroyed after successful deployment and restore testing; only separate Terraform state and application-backup S3 storage remain.
 
-Use this document as the restart point for a future ChatGPT session. It records the current state and ordered next steps. The current repository decision is **READY TO PUBLISH** as an honest portfolio project; publication itself remains a manual GitHub visibility change. This is not a claim that every engineering enhancement is finished. Do not assume the app is running or deploy anything without reviewing the plan and confirming the intended spend.
+Use this document as the restart point for a future ChatGPT session. It records the current state and ordered next steps. The repository is now **PUBLIC**; GitHub metadata confirms the visibility change. The application stack remains offline/destroyed and must not be redeployed without reviewing the plan and explicitly confirming the test window and intended spend. Publication does not mean every engineering follow-up is finished.
 
 ## 1. Project goal and design
 
@@ -85,25 +85,28 @@ Latest publication-readiness update: [commit `bd505d043bcaebfb8aaeb802468ceb93db
 
 ## 5. Prioritized next-session plan
 
-The publication security gate is marked PASS in `docs/portfolio-readiness.md`. Do not repeat completed history or teardown checks unless new commits or evidence justify doing so.
+The repository is public. Do not repeat completed history or teardown checks unless new commits, alerts, or evidence justify doing so.
 
-### Priority 1 — complete the manual publication steps
-- [x] Sanitize the current tracked tree and audit the 138 commits reachable from `main`; no concrete AWS account ID or static state/backup bucket names were found in commit diffs.
-- [x] Confirm the operator-reported full-history Gitleaks scan has no findings.
-- [x] Update `docs/portfolio-readiness.md` to **READY TO PUBLISH**, distinguish publication blockers from follow-up engineering work, and retain an accurate offline/destroyed app status.
-- [ ] Decide whether to add a `LICENSE`. There is no license file; do not imply reuse rights until the intended terms are chosen. This is a licensing decision, not a technical readiness failure.
-- [ ] Set a concise repository description and useful topics in GitHub repository settings.
-- [ ] Make the repository public manually in GitHub: **Settings → General → Danger Zone → Change repository visibility → Make public**. The connected GitHub tools can edit repository contents but cannot change visibility.
-- [ ] After publication, inspect the repository in a signed-out/private browser window and verify that the README, docs and links render.
+### Priority 1 — finish post-publication housekeeping (no AWS spend)
+- [x] Change repository visibility to public and verify the GitHub metadata reports `visibility: public`.
+- [ ] Open the repository in a signed-out/private browser window and verify README, docs, workflow files, architecture diagram and relative links render correctly.
+- [ ] Set a concise repository description. As of 19 October 2026 the repository metadata description is empty. Suggested: "Terraform-managed Uptime Kuma on ECS/EC2 with OIDC delivery, CloudWatch monitoring and S3 backup/restore."
+- [ ] Add relevant topics: `aws`, `terraform`, `ecs`, `devops`, `github-actions`, `oidc`, `infrastructure-as-code`. No topics were configured as of 19 October 2026.
+- [ ] Decide whether to add a `LICENSE`. No license file is tracked; license choice is optional housekeeping, not a visibility blocker.
 
-### Priority 2 — engineering and evidence follow-ups (not publication blockers)
-- [ ] Cost controls: `terraform/cost-controls/` defines account-wide monthly budget alerts at 50%, 80% and 100% actual spend (default USD 10; credit offsets excluded). It is not applied or tested; do not claim active alerting.
-- [ ] Alarm validation: verify SNS subscription and safely exercise meaningful CloudWatch alarm conditions including return to OK.
-- [ ] Cost reporting: extract Cost Explorer data after refresh and state whether a reported figure is gross or credit-offset net. No project cost total is currently verified.
-- [ ] Transport security: the test endpoint used HTTP restricted to a configured IPv4 `/32`; if redeploying for ongoing use, add domain/ACM/HTTPS and redirect, or keep the dashboard private.
-- [ ] Next restore drill: capture exact S3 VersionId, checksum digest, SSM execution ID, direct SQLite integrity output, and precise request-to-healthy-target timestamps; optionally create a canary monitor.
-- [ ] Improve and retest predictable ECS/ASG teardown, which initially required scaling ASG desired capacity to zero and replanning.
-- [ ] Add sanitized screenshots/video after an approved, time-boxed deployment, following `docs/evidence-capture.md`. This is helpful portfolio evidence but not required to publish the current honest write-up.
+### Priority 2 — verify cost protection and deployment identity before redeployment
+- [ ] Read-only review the two retained S3 buckets, their purpose and ongoing storage use. Preserve the state bucket while either remote-state root depends on it; don't use application teardown to delete persistent storage.
+- [ ] Decide whether to enable `terraform/cost-controls/`. It defines an account-wide monthly budget (default USD 10) with actual-spend notifications at 50%, 80% and 100%, excluding credits. Set the intended notification email, review the account-wide scope and apply it only after an approved plan. Budget notifications are not a hard spending cap.
+- [ ] Before any workflow deployment, verify GitHub repository variables/secrets, `aws-deploy` environment protection/reviewers, AWS OIDC trust conditions, and plan/apply role permissions. These account settings have not been independently verified from the repository-file review.
+- [ ] Keep the application offline until an explicit test window and acceptable spend have been agreed.
+
+### Priority 3 — one approved, time-boxed engineering evidence deployment
+- [ ] If a domain is available, add ACM/HTTPS and HTTP-to-HTTPS redirect; otherwise keep the temporary dashboard restricted to a trusted IPv4 `/32` and document HTTP as a limitation.
+- [ ] Verify SNS subscription, exercise meaningful CloudWatch alarm transitions to ALARM and back to OK, and separately inspect metric dimensions/threshold behavior.
+- [ ] Repeat the restore drill with a canary monitor and collect the exact S3 version ID, checksum digest, SSM execution ID, direct SQLite integrity output, termination-request time and first healthy replacement-target time. Record dashboard usability separately; do not claim exact RPO/RTO until directly measured.
+- [ ] Capture sanitized ECS, ALB, dashboard/restore, alarm-email, and GitHub Actions evidence.
+- [ ] After Cost Explorer refreshes, report a cost only with its period, metric, attribution/filter, currency and gross-versus-credit-offset treatment. Include retained S3 costs and don't present account-wide costs as project-only costs.
+- [ ] Improve and test the teardown procedure, which previously required reducing ASG desired capacity to zero and replanning. Audit the account after teardown and preserve the separate state/backup roots.
 
 ## 6. Technical guardrails
 
@@ -118,4 +121,4 @@ The publication security gate is marked PASS in `docs/portfolio-readiness.md`. D
 
 ## 7. Quick prompt for the next ChatGPT session
 
-> Continue the Uptime Kuma AWS portfolio project from this handoff. The application stack is offline/destroyed and the separate Terraform state and app-backup buckets remain. `docs/portfolio-readiness.md` says **READY TO PUBLISH**: the current tree is sanitized, the operator reports a clean full-history Gitleaks scan, and GitHub's reachable-history audit covered all 138 commits with no literal AWS account ID or static state/backup bucket names found. Do not re-introduce a history-rewrite blocker without new evidence. Remaining publication actions are manual GitHub settings: description/topics, decide on a LICENSE, change visibility to public, then inspect while signed out. HTTPS, alarm delivery, precise RPO/RTO, evidence video and cost extraction remain follow-up work, not publication blockers. Do not deploy AWS resources without explicit approval of the test window and spend.
+> Continue the Uptime Kuma AWS portfolio project from this handoff. The repository is PUBLIC (verified via GitHub metadata); the application stack is offline/destroyed and the separate Terraform state and app-backup S3 buckets remain. The current tree was sanitized, the operator reported a clean full-history Gitleaks scan, and the reachable-history audit covered 138 commits with no literal AWS account ID or static state/backup bucket names found. The latest Gitleaks push runs are passing. Do not re-introduce a history-rewrite blocker without new evidence. First finish public-facing housekeeping: verify rendering while signed out, add a repository description and topics (currently empty), and decide whether a LICENSE is appropriate. Before any redeployment, review persistent S3 storage, enable and verify cost alerts if approved, and verify GitHub Environment/OIDC/IAM deployment settings. Only proceed with an explicitly approved test window and spend. HTTPS, alarm delivery, precise RPO/RTO, demo evidence, Cost Explorer reporting, and teardown reliability remain engineering follow-ups, not publication blockers.
