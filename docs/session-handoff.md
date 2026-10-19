@@ -72,6 +72,7 @@ Repository file tree currently includes:
 - `docs/portfolio-readiness.md`
 - `docs/restore-drill.md`
 - `docs/evidence-capture.md`
+- `LICENSE` — Apache License 2.0 for this project's original work.
 - Terraform configuration and provider lock files.
 
 ### Workflows
@@ -79,7 +80,7 @@ Repository file tree currently includes:
 - **Gitleaks:** `.github/workflows/gitleaks.yml` uses Gitleaks Action v3 pinned to a commit SHA and CLI version `8.30.0`; full-history checkout is enabled. User confirmed the full-history Gitleaks scan is clean. This is not proof that a secret was never exposed: rotate any credential suspected to have been committed.
 - **Terraform deployment:** manual dispatch only, main-branch gate, plan role via OIDC, encrypted short-retention plan artifact, explicit `DEPLOY` confirmation, and protected `aws-deploy` environment for apply. The plan/apply path was exercised successfully during the test. No automatic destroy workflow exists.
 
-Latest publication-readiness update: [commit `bd505d043bcaebfb8aaeb802468ceb93db968b6b`](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/commit/bd505d043bcaebfb8aaeb802468ceb93db968b6b). The authoritative checklist is [`docs/portfolio-readiness.md`](portfolio-readiness.md), which now states **READY TO PUBLISH**.
+Latest publication-readiness update: [commit `bd505d043bcaebfb8aaeb802468ceb93db968b6b`](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/commit/bd505d043bcaebfb8aaeb802468ceb93db968b6b). The authoritative checklist is [`docs/portfolio-readiness.md`](portfolio-readiness.md), which now states **PUBLISHED** and records Apache License 2.0.
 
 **Security and history status (19 October 2026):** the current tracked tree uses placeholders for account-specific values. I inspected the diffs of all 138 commits reachable from `main` through GitHub's API for concrete 12-digit AWS account IDs and literal state/backup bucket names; none were found. GitHub's refs endpoint exposed only `refs/heads/main`, with no tag refs. The operator confirmed that `gitleaks detect` returned no findings. No further force-push/history rewrite was performed because this reachable-history audit found no targeted literals to remove. This does not erase copies in local clones or guarantee immediate removal of GitHub's unreachable-object caches. Keep old local clones private and do not restore removed identifiers. Do not leave the old 'history cleanup is a publication blocker' wording in future docs.
 
@@ -90,9 +91,9 @@ The repository is public. Do not repeat completed history or teardown checks unl
 ### Priority 1 — finish post-publication housekeeping (no AWS spend)
 - [x] Change repository visibility to public and verify the GitHub metadata reports `visibility: public`.
 - [ ] Open the repository in a signed-out/private browser window and verify README, docs, workflow files, architecture diagram and relative links render correctly.
-- [ ] Set a concise repository description. As of 19 October 2026 the repository metadata description is empty. Suggested: "Terraform-managed Uptime Kuma on ECS/EC2 with OIDC delivery, CloudWatch monitoring and S3 backup/restore."
-- [ ] Add relevant topics: `aws`, `terraform`, `ecs`, `devops`, `github-actions`, `oidc`, `infrastructure-as-code`. No topics were configured as of 19 October 2026.
-- [ ] Decide whether to add a `LICENSE`. No license file is tracked; license choice is optional housekeeping, not a visibility blocker.
+- [ ] Set a concise repository description. The GitHub repository metadata still has an empty description. Suggested: "Terraform-managed Uptime Kuma on ECS/EC2 with OIDC delivery, CloudWatch monitoring and S3 backup/restore."
+- [ ] Add relevant topics: `aws`, `terraform`, `ecs`, `devops`, `github-actions`, `oidc`, `infrastructure-as-code`. GitHub metadata currently reports no topics.
+- [x] Add Apache License 2.0 at the repository root and link it from the README. It covers the project's original work; third-party tools and dependencies remain subject to their own licenses.
 
 ### Priority 2 — verify cost protection and deployment identity before redeployment
 - [ ] Read-only review the two retained S3 buckets, their purpose and ongoing storage use. Preserve the state bucket while either remote-state root depends on it; don't use application teardown to delete persistent storage.
@@ -121,4 +122,4 @@ The repository is public. Do not repeat completed history or teardown checks unl
 
 ## 7. Quick prompt for the next ChatGPT session
 
-> Continue the Uptime Kuma AWS portfolio project from this handoff. The repository is PUBLIC (verified via GitHub metadata); the application stack is offline/destroyed and the separate Terraform state and app-backup S3 buckets remain. The current tree was sanitized, the operator reported a clean full-history Gitleaks scan, and the reachable-history audit covered 138 commits with no literal AWS account ID or static state/backup bucket names found. The latest Gitleaks push runs are passing. Do not re-introduce a history-rewrite blocker without new evidence. First finish public-facing housekeeping: verify rendering while signed out, add a repository description and topics (currently empty), and decide whether a LICENSE is appropriate. Before any redeployment, review persistent S3 storage, enable and verify cost alerts if approved, and verify GitHub Environment/OIDC/IAM deployment settings. Only proceed with an explicitly approved test window and spend. HTTPS, alarm delivery, precise RPO/RTO, demo evidence, Cost Explorer reporting, and teardown reliability remain engineering follow-ups, not publication blockers.
+> Continue the Uptime Kuma AWS portfolio project from this handoff. The repository is PUBLIC (verified via GitHub metadata); the application stack is offline/destroyed and the separate Terraform state and app-backup S3 buckets remain. The current tree was sanitized, the operator reported a clean full-history Gitleaks scan, and the reachable-history audit covered 138 commits with no literal AWS account ID or static state/backup bucket names found. The latest Gitleaks push runs are passing. Do not re-introduce a history-rewrite blocker without new evidence. First finish public-facing housekeeping: verify rendering while signed out and set the GitHub repository description and topics (currently empty). Apache License 2.0 is already committed in `LICENSE` and linked from the README. Before any redeployment, review persistent S3 storage, enable and verify cost alerts if approved, and verify GitHub Environment/OIDC/IAM deployment settings. Only proceed with an explicitly approved test window and spend. HTTPS, alarm delivery, precise RPO/RTO, demo evidence, Cost Explorer reporting, and teardown reliability remain engineering follow-ups, not publication blockers.
