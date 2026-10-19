@@ -7,8 +7,24 @@ Use this checklist during one deliberately time-boxed test deployment. The appli
 - [ ] Agree the test window and acceptable spend before applying anything. Review the entire Terraform plan and confirm the target AWS account.
 - [ ] Configure the existing remote-state bucket name in each backend block and set `TF_VAR_aws_account_id`. For GitHub Actions, configure `AWS_ACCOUNT_ID`, the role ARNs, `TFPLAN_ENCRYPTION_KEY`, `BUDGET_ALERT_EMAIL` and (if needed) `MONTHLY_BUDGET_LIMIT_USD`.
 - [ ] Use a single trusted client IPv4 address in `/32` notation. Do not commit the address or put it in screenshots.
-- [ ] A domain is available: `pedromartins9.me`. The proposed hostname for the dashboard is `uptime.pedromartins9.me`, pending confirmation and DNS setup. Confirm the DNS provider (Route 53 or external) before editing DNS automation. Request an ACM public certificate in `eu-west-1`, add the ACM-provided DNS-validation CNAME, wait for issuance, configure the ALB HTTPS listener on 443, redirect HTTP on 80 to HTTPS, and add the appropriate DNS record pointing the hostname to the ALB. Keep the dashboard ingress restricted to the trusted IPv4 `/32` unless a separate public-access design is explicitly approved.
+- [ ] The default dashboard hostname is `uptime.pedromartins9.me` (override using `TF_VAR_domain_name` locally or the `UPTIME_KUMA_DOMAIN_NAME` GitHub Actions repository variable). Verify that the ACM certificate is **ISSUED in `eu-west-1`** and that its primary domain or SAN covers this exact hostname. A certificate for `pedromartins9.me` alone does not cover the subdomain; a suitable wildcard or SAN certificate does. The Terraform root looks up the existing certificate and does not create a duplicate.
 - [ ] Record the start time in UTC, the tested commit SHA, region, and planned teardown time in private notes. Do not publish AWS account IDs, ARNs, IP addresses, email addresses, full target URLs, or monitor names that reveal private details.
+
+## DNS routing after the ALB is created
+
+The DNS zone is not managed by this Terraform root. After an approved apply, retrieve the load balancer target:
+
+```bash
+terraform -chdir=terraform output -raw alb_dns_name
+```
+
+In the DNS provider authoritative for `pedromartins9.me`, create a CNAME record with:
+
+- Host/name: `uptime`
+- Target/value: the exact ALB DNS name returned above (hostname only; no scheme or path)
+- TTL: provider default/automatic is fine
+
+Keep the ACM DNS-validation CNAME record in place; ACM uses it for certificate validation and managed renewal. Do not create the application CNAME before the ALB exists unless its DNS target is already known. Verify that the domain points to the ALB before testing browser HTTPS and the HTTP redirect.
 
 ## Screenshots to capture
 
