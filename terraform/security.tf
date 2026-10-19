@@ -1,7 +1,8 @@
 # Public entry point: the Application Load Balancer.
+# HTTP and HTTPS access remain restricted to the configured trusted client IPv4 /32.
 resource "aws_security_group" "alb" {
   name        = "uptimekuma-alb-sg"
-  description = "Allow temporary public HTTP access to the ALB"
+  description = "Allow trusted-client HTTP redirect and HTTPS access to the ALB"
   vpc_id      = aws_vpc.main.id
 
   tags = {
@@ -20,13 +21,22 @@ resource "aws_security_group" "ecs_instances" {
   }
 }
 
-# Public HTTP access to the ALB.
+# HTTP is only needed to redirect clients to HTTPS.
 resource "aws_vpc_security_group_ingress_rule" "alb_http" {
   security_group_id = aws_security_group.alb.id
-  description       = "HTTP access from the configured trusted client IPv4 address"
+  description       = "HTTP redirect from the configured trusted client IPv4 address"
   cidr_ipv4         = var.allowed_client_ipv4_cidr
   from_port         = 80
   to_port           = 80
+  ip_protocol       = "tcp"
+}
+
+resource "aws_vpc_security_group_ingress_rule" "alb_https" {
+  security_group_id = aws_security_group.alb.id
+  description       = "HTTPS access from the configured trusted client IPv4 address"
+  cidr_ipv4         = var.allowed_client_ipv4_cidr
+  from_port         = 443
+  to_port           = 443
   ip_protocol       = "tcp"
 }
 
