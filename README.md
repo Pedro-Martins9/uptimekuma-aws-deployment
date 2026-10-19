@@ -72,7 +72,7 @@ The validation workflow has passed, and the full-history Gitleaks scan has been 
 - **ECS on EC2 instead of Fargate:** this project was built to learn both container orchestration and the EC2 capacity layer. The trade-off is more responsibility for instance capacity, the ECS agent, launch templates and Auto Scaling.
 - **SQLite with consistent S3 backups instead of a shared filesystem:** a SQLite-consistent snapshot, checksum sidecar and startup integrity check made recovery testable without introducing EFS or an external database. The design uses a single active application task and restore-on-boot; it is not a multi-writer database design.
 - **One active ECS task:** this avoids multiple tasks maintaining independent local SQLite copies. At scale, I would first establish a persistence architecture supported by the application, then test multi-task behavior and availability zones rather than simply increasing desired count.
-- **HTTP-only test endpoint:** the temporary endpoint was restricted to a trusted IPv4 /32 to limit exposure while controlling cost. It is not suitable for a public dashboard. With a domain under my control, the next hardening step is an ACM certificate, HTTPS listener and HTTP-to-HTTPS redirect.
+- **HTTP-only test endpoint:** the temporary endpoint was restricted to a trusted IPv4 /32 to limit exposure while controlling cost. It is not suitable for a public dashboard. A domain (`pedromartins9.me`) is now available for the next test; a dedicated hostname such as `uptime.pedromartins9.me` is proposed, but the hostname, DNS records and HTTPS configuration have not yet been applied. The next hardening step is ACM DNS validation, an HTTPS listener and an HTTP-to-HTTPS redirect while keeping dashboard access restricted.
 - **Terraform state locking:** the remote S3 backends use native S3 lock files (`use_lockfile = true`) and per-root state keys; the state bucket uses versioning. The bootstrap root still uses local state unless deliberately migrated.
 
 ## Backup schedule and recovery objective
@@ -90,7 +90,7 @@ The repository includes the workflows and restore-drill record, but the applicat
 
 ## Security and known limitations
 
-- The test load balancer used **HTTP only**, restricted to a configured client IPv4 address. HTTPS/TLS was not implemented, and the application is offline. Do not use this temporary configuration to host a public dashboard as-is.
+- The test load balancer used **HTTP only**, restricted to a configured client IPv4 address. HTTPS/TLS is still not implemented, and the application is offline. A domain (`pedromartins9.me`) is available for a future test; `uptime.pedromartins9.me` is a proposed hostname only, not a live endpoint. Do not use the old HTTP configuration to host a public dashboard as-is.
 - CloudWatch alarm resources are defined, but end-to-end SNS delivery and every alarm condition have not been demonstrated.
 - A separate `terraform/cost-controls/` root defines an account-wide monthly USD budget with actual-spend notifications at 50%, 80% and 100%, excluding credit offsets. It is not enabled until `BUDGET_ALERT_EMAIL` is configured, and email delivery has not yet been tested.
 - Exact S3 object-version/checksum evidence and precise RPO/RTO measurements were not captured during the recovery drill.
