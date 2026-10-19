@@ -17,3 +17,8 @@ output "acm_certificate_arn" {
   description = "Issued ACM certificate selected for the configured Uptime Kuma hostname."
   value       = data.aws_acm_certificate.uptimekuma.arn
 }
+
+output "uptimekuma_url" {
+  description = "Public HTTPS URL for the Uptime Kuma dashboard after DNS is configured."
+  value       = "https://${var.domain_name}"
+}
