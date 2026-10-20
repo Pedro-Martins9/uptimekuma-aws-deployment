@@ -289,7 +289,6 @@ Earlier apply errors showed missing `ec2:RunInstances`, `elasticloadbalancing:Mo
 In **Settings → Secrets and variables → Actions → Variables**, add:
 
 - `AWS_ACCOUNT_ID`: the same 12-digit AWS account ID used in the Terraform variable `aws_account_id`.
-- `TFSTATE_BUCKET`: the name of the existing S3 bucket that stores Terraform state for the application, backup-infra and cost-controls roots. This value is supplied to `terraform init` at runtime; do not put the bucket name back into the tracked backend files.
 - `BUDGET_ALERT_EMAIL`: optional email recipient for the account-wide monthly cost budget. Set it only if you want the budget resource enabled.
 - `MONTHLY_BUDGET_LIMIT_USD`: optional monthly account-wide cost threshold in USD; defaults to `10` in `terraform/cost-controls/`.
 
