@@ -26,15 +26,15 @@ Key components in the tested architecture:
 
 AWS region used: `eu-west-1`. The application, backup-infra and cost-controls roots use partial S3 backend configuration with separate preserved state keys. Configure the existing remote-state bucket name as GitHub Actions repository secret `TFSTATE_BUCKET`; the workflow passes it to `terraform init -reconfigure -backend-config`. For local operations, export `TFSTATE_BUCKET` with the actual bucket name in your shell, then pass it to `terraform init -reconfigure -backend-config="bucket=$TFSTATE_BUCKET"`. Do not hardcode or commit the bucket name. Provider account guards use `aws_account_id`; set `TF_VAR_aws_account_id` explicitly.
 
-## 2. Current AWS state — do not redeploy by assumption
+## 2. Current AWS state — deployed 20 October 2026
 
-The application stack was destroyed after the recovery test to control costs. The user confirmed:
+The prior application stack was destroyed after the recovery test to control costs, then redeployed successfully through workflow run #20. Current state:
 
 - The post-destroy audit completed successfully.
 - The state and app-backup S3 buckets still exist.
 - Terraform reported 19 resources destroyed in the main application root.
-- The main application stack is offline.
-- The application-root SSM backup and freshness associations were removed with the main stack; scheduled backups do not run while it is offline.
+- The main application stack is deployed; the operator reports that the hostname serves the application and HTTP redirects to HTTPS.
+- The application-root SSM backup and freshness associations were recreated by the new deployment; verify a successful SSM backup execution and matching S3 archive/checksum.
 
 The retained buckets are deliberately managed separately from the main app root. Their actual names are account-specific and must stay out of public-facing docs. The GitHub tree uses placeholders. They can continue to incur S3 storage charges; the exact current cost has not been measured here. Do not destroy the state bucket while it is needed by either remote-state root. Do not run routine app teardown from `terraform/bootstrap-state/`, `terraform/backup-infra/` or `terraform/cost-controls/`.
 
@@ -100,10 +100,10 @@ The repository is public. Do not repeat completed history or teardown checks unl
 - [ ] Read-only review the two retained S3 buckets, their purpose and ongoing storage use. Preserve the state bucket while either remote-state root depends on it; don't use application teardown to delete persistent storage.
 - [ ] Decide whether to enable `terraform/cost-controls/`. It defines an account-wide monthly budget (default USD 10) with actual-spend notifications at 50%, 80% and 100%, excluding credits. Set the intended notification email, review the account-wide scope and apply it only after an approved plan. Budget notifications are not a hard spending cap.
 - [ ] Before any workflow deployment, verify GitHub repository variables/secrets, `aws-deploy` environment protection/reviewers, AWS OIDC trust conditions, and plan/apply role permissions. These account settings have not been independently verified from the repository-file review.
-- [ ] Keep the application offline until an explicit test window and acceptable spend have been agreed.
+- [ ] Keep the current stack deployed only for the agreed test window, monitor spend, and plan a controlled teardown when testing is finished.
 
-### Priority 3 — one approved, time-boxed engineering evidence deployment
-- [ ] **HTTPS Terraform is in source but not deployed:** default hostname is `uptime.pedromartins9.me`; `terraform/certificate.tf` looks up an existing issued ACM certificate and `terraform/loadbalancer.tf` configures HTTPS on 443 plus an HTTP-to-HTTPS redirect on 80. The ALB will be public on IPv4 TCP 80/443; ECS dynamic host-port ingress must remain limited to the ALB security group. Do not plan until ACM status is `ISSUED` in `eu-west-1`, the certificate covers the hostname. The default primary-domain lookup is `uptime.pedromartins9.me`; if the issued certificate has a different primary domain, set GitHub variable `ACM_CERTIFICATE_LOOKUP_DOMAIN` to that exact domain. An apex-only certificate without the subdomain will not work. After an approved apply, create the external DNS CNAME `uptime` pointing to `terraform output -raw alb_dns_name`. Use strong, unique Uptime Kuma credentials because the login page will be internet-accessible.
+### Priority 3 — post-deployment verification and evidence
+- [x] **HTTPS and DNS:** workflow run #20 completed, and the operator reports that the domain serves the application with HTTP redirecting to HTTPS. Verify the browser certificate and current ALB target health. The ALB is public on IPv4 ports 80/443; ECS host ports should remain restricted to the ALB security group.
 - [ ] Verify SNS subscription, exercise meaningful CloudWatch alarm transitions to ALARM and back to OK, and separately inspect metric dimensions/threshold behavior.
 - [ ] Repeat the restore drill with a canary monitor and collect the exact S3 version ID, checksum digest, SSM execution ID, direct SQLite integrity output, termination-request time and first healthy replacement-target time. Record dashboard usability separately; do not claim exact RPO/RTO until directly measured.
 - [ ] Capture sanitized ECS, ALB, dashboard/restore, alarm-email, and GitHub Actions evidence.
@@ -112,10 +112,10 @@ The repository is public. Do not repeat completed history or teardown checks unl
 
 ## 6. Technical guardrails
 
-- Do not claim HTTPS is live or tested: the Terraform listener/redirect configuration is committed but has not been applied.
+- The operator reports HTTPS is live and HTTP redirects to HTTPS; capture the browser certificate and redirect evidence for the portfolio.
 - Do not claim alarm notifications are proven end-to-end.
 - Do not claim exact measured RPO or RTO.
-- Do not claim the application is live; it was destroyed after the successful drill.
+- The application is live according to the operator; independently verify current ECS task and target health before recording those checks as verified.
 - The state and backup buckets persist and may still incur cost.
 - Never commit Terraform state, plan artifacts, `.tfvars`, credentials, or private keys.
 - Before a future deployment, inspect the entire Terraform plan and verify public ALB ingress is limited to IPv4 TCP 80/443. Keep ECS dynamic host ports restricted to the ALB security group. Revisit the EC2 host ephemeral-port range and confirm it matches the dynamic host-port security-group rules before deployment; this check is still outstanding.
@@ -123,4 +123,4 @@ The repository is public. Do not repeat completed history or teardown checks unl
 
 ## 7. Quick prompt for the next ChatGPT session
 
-> Continue the Uptime Kuma AWS portfolio project from this handoff. The repository is PUBLIC (verified via GitHub metadata); the application stack is offline/destroyed and the separate Terraform state and app-backup S3 buckets remain. The current tree was sanitized, the operator reported a clean full-history Gitleaks scan, and the reachable-history audit covered 138 commits with no literal AWS account ID or static state/backup bucket names found. The latest Gitleaks push runs are passing. Do not re-introduce a history-rewrite blocker without new evidence. First finish public-facing housekeeping: verify rendering while signed out and set the GitHub repository description and topics (currently empty). Apache License 2.0 is already committed in `LICENSE` and linked from the README. A domain is now available (`pedromartins9.me`); the proposed dashboard hostname is `uptime.pedromartins9.me`, Terraform now has the ACM lookup, HTTPS listener and HTTP-to-HTTPS redirect in source, but the DNS record has not been routed to the ALB and no AWS apply has occurred. Before any redeployment, review persistent S3 storage, enable and verify cost alerts if approved, and verify GitHub Environment/OIDC/IAM deployment settings. The Terraform source selects an existing issued ACM certificate using `acm_certificate_lookup_domain` (defaults to `domain_name`) and defines HTTPS/redirect listeners; do not plan until the certificate is `ISSUED` in `eu-west-1` and covers that hostname. If its ACM primary domain differs from the service hostname, configure repository variable `ACM_CERTIFICATE_LOOKUP_DOMAIN`. After an approved apply, point the external DNS CNAME to the ALB output. Public access is intentionally allowed on IPv4 80/443, while ECS host ports must remain restricted to the ALB security group. Use strong, unique Uptime Kuma admin credentials. Only proceed with an explicitly approved test window and spend. HTTPS, alarm delivery, precise RPO/RTO, demo evidence, Cost Explorer reporting, and teardown reliability remain engineering follow-ups, not publication blockers.
+> Continue the Uptime Kuma AWS portfolio project from this handoff. The repository is public, and the application stack was redeployed successfully on 20 October 2026 through workflow run #20 (47 added, 0 changed, 0 destroyed). The operator reports that `uptime.pedromartins9.me` serves the application and HTTP redirects to HTTPS. Next, verify current ECS and ALB target health, the EC2 ephemeral-port range against dynamic host-port security rules, successful SSM backup execution plus archive/checksum in S3, and CloudWatch/SNS alert delivery. Capture sanitized endpoint and infrastructure evidence, review cost alerts and Cost Explorer, then perform a controlled teardown when the test window ends. Keep ECS host ports private behind the ALB security group and account-specific IDs and bucket names out of public files.
