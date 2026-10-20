@@ -2,7 +2,7 @@
 
 A cloud/DevOps portfolio project that deploys [Uptime Kuma](https://github.com/louislam/uptime-kuma) on **Amazon ECS using EC2 capacity**. It combines infrastructure as code, networking, container orchestration, monitoring, secure administration, automated backups, recovery testing and GitHub Actions with AWS OIDC.
 
-> **Current status: deployed.** Terraform deployment workflow [run #20](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39461906090) completed on 20 October 2026 with 47 resources added, 0 changed and 0 destroyed. The operator reports that `https://uptime.pedromartins9.me` serves the application and HTTP redirects to HTTPS. Post-deployment checks for target health, dynamic port mapping, alarms and automated backup execution remain to be recorded. The separate Terraform-state and application-backup S3 buckets remain intentionally and may incur storage charges.
+> **Current status: deployed.** Terraform deployment workflow [run #20](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39461906090) completed on 20 October 2026 with 47 resources added, 0 changed and 0 destroyed. The operator reports that `https://uptime.pedromartins9.me` serves the application and HTTP redirects to HTTPS. ECS has one running task, the ALB target is healthy on port 3001, and manual backup plus freshness-check runs succeeded. Remaining checks are dynamic port-range verification, the backup-freshness alarm state, and SNS email notification setup/testing. The separate Terraform-state and application-backup S3 buckets remain intentionally and may incur storage charges.
 
 ## At a glance
 
