@@ -24,7 +24,7 @@ Key components in the tested architecture:
 - Daily SQLite-consistent application backup to S3, SHA-256 sidecar, and restore-on-EC2-startup validation.
 - GitHub Actions for Terraform validation, Gitleaks scanning, and a manually gated Terraform plan/apply workflow using AWS OIDC.
 
-AWS region used: `eu-west-1`. The application, backup-infra and cost-controls roots use partial S3 backend configuration with separate preserved state keys. Configure the existing remote-state bucket name as GitHub Actions repository variable `TFSTATE_BUCKET`; the workflow passes it to `terraform init -reconfigure -backend-config`. For local operations use `TFSTATE_BUCKET=<existing-bucket-name>` and pass it to `terraform init` the same way. Do not hardcode or commit the bucket name. Provider account guards use `aws_account_id`; set `TF_VAR_aws_account_id` explicitly.
+AWS region used: `eu-west-1`. The application, backup-infra and cost-controls roots use partial S3 backend configuration with separate preserved state keys. Configure the existing remote-state bucket name as GitHub Actions repository secret `TFSTATE_BUCKET`; the workflow passes it to `terraform init -reconfigure -backend-config`. For local operations use `TFSTATE_BUCKET=<existing-bucket-name>` and pass it to `terraform init` the same way. Do not hardcode or commit the bucket name. Provider account guards use `aws_account_id`; set `TF_VAR_aws_account_id` explicitly.
 
 ## 2. Current AWS state — do not redeploy by assumption
 
