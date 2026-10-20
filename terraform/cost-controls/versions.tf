@@ -9,6 +9,7 @@ terraform {
   }
 
   backend "s3" {
+    bucket       = ""
     key          = "uptimekuma/cost-controls.tfstate"
     region       = "eu-west-1"
     encrypt      = true
