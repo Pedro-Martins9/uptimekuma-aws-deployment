@@ -299,7 +299,10 @@ In **Settings → Secrets and variables → Actions → Variables**, add:
 - `ACM_CERTIFICATE_LOOKUP_DOMAIN`: optional exact ACM primary domain used to find the certificate if it differs from `UPTIME_KUMA_DOMAIN_NAME`. The selected certificate must be `ISSUED` in `eu-west-1` and cover the dashboard hostname in its certificate names/SANs. Do not point this at an apex-only certificate that lacks the dashboard subdomain.
 No ALB client-CIDR variable is required. If `ALB_ALLOWED_CLIENT_CIDR` remains in the repository variables from the earlier restricted setup, it is now obsolete and can be removed. The intended dashboard is internet-accessible on ALB IPv4 ports 80 and 443, and HTTP redirects to HTTPS. ECS dynamic host ports remain accessible only from the ALB security group. Because the Uptime Kuma login page will be public, use a strong, unique admin password and verify the login/setup flow during the test deployment. If you change a repository variable such as `UPTIME_KUMA_DOMAIN_NAME`, start a **new workflow run** after saving it rather than re-running an old failed run.
 
-In **Settings → Secrets and variables → Actions → Secrets**, add `TFPLAN_ENCRYPTION_KEY`. Generate a strong random value locally (for example, with `openssl rand -base64 48`), store it in a password manager, then add the same value as the GitHub Actions secret. **Never commit or paste this value into issues, logs, or chat.** The deployment workflow encrypts the saved Terraform plan before uploading it as a short-retention artifact.
+In **Settings → Secrets and variables → Actions → Secrets**, add:
+
+- `TFSTATE_BUCKET`: the name of the existing Terraform-state bucket. It is passed to Terraform backend initialization and must match the bucket that already contains the current state files.
+- `TFPLAN_ENCRYPTION_KEY`: generate a strong random value locally (for example, with `openssl rand -base64 48`), store it in a password manager, then add the same value as the GitHub Actions secret. **Never commit or paste this value into issues, logs, or chat.** The deployment workflow encrypts the saved Terraform plan before uploading it as a short-retention artifact.
 
 In **Settings → Environments**, create `aws-deploy` and allow deployments from `main`. Configure at least one **Required reviewer**. The apply job will be held by GitHub until the environment is approved; branch restrictions alone do not pause a deployment. Add this environment variable:
 
@@ -311,7 +314,7 @@ The SNS email subscription remains pending until its confirmation link is accept
 
 ## 5. Prove the guardrails
 
-1. In GitHub repository **Settings → Secrets and variables → Actions → Variables**, configure `TFSTATE_BUCKET` with the exact name of the existing Terraform state bucket, plus `AWS_ACCOUNT_ID` and the plan/apply role ARNs. The deployment workflow supplies the bucket to Terraform during `init`; do not edit the tracked backend files to hardcode it. For local commands, export `TFSTATE_BUCKET` and use `terraform init -reconfigure -backend-config="bucket=$TFSTATE_BUCKET"`. Set `TF_VAR_aws_account_id` separately without committing it.
+1. In GitHub repository **Settings → Secrets and variables → Actions → Secrets**, set `TFSTATE_BUCKET` to the exact existing state-bucket name. In **Variables**, configure `AWS_ACCOUNT_ID` and both role ARN values. The workflow supplies the bucket to each selected S3 backend during `terraform init -reconfigure`; do not edit or commit the bucket name in the backend files. For local operations, export `TFSTATE_BUCKET` and run `terraform init -reconfigure -backend-config="bucket=$TFSTATE_BUCKET"`. Set `TF_VAR_aws_account_id` separately without committing it.
 2. Run **Terraform validation** and make sure formatting and validation pass for the main, state-bootstrap and backup-infrastructure directories.
 3. From Actions, manually dispatch **Terraform deployment** on `main` with mode `plan`. Confirm it assumes the plan role and produces a plan without changing resources.
 4. Review the plan artifact and summary. Plan artifacts may contain sensitive values; the workflow encrypts the plan artifact and retains it for one day.
