@@ -76,7 +76,7 @@ jobs:
         run: |
           set -euo pipefail
           if [[ -z "${TFSTATE_BUCKET:-}" ]]; then
-            echo "::error::Configure the existing remote-state S3 bucket name as the TFSTATE_BUCKET repository Actions variable."
+            echo "::error::Configure the existing remote-state S3 bucket name as the TFSTATE_BUCKET repository Actions secret."
             exit 1
           fi
           if [[ "$TFSTATE_BUCKET" == "REPLACE_WITH_EXISTING_TFSTATE_BUCKET" ]]; then
@@ -202,7 +202,7 @@ jobs:
         run: |
           set -euo pipefail
           if [[ -z "${TFSTATE_BUCKET:-}" ]]; then
-            echo "::error::Configure the existing remote-state S3 bucket name as the TFSTATE_BUCKET repository Actions variable."
+            echo "::error::Configure the existing remote-state S3 bucket name as the TFSTATE_BUCKET repository Actions secret."
             exit 1
           fi
           if [[ "$TFSTATE_BUCKET" == "REPLACE_WITH_EXISTING_TFSTATE_BUCKET" ]]; then
