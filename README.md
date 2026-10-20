@@ -2,7 +2,7 @@
 
 A cloud/DevOps portfolio project that deploys [Uptime Kuma](https://github.com/louislam/uptime-kuma) on **Amazon ECS using EC2 capacity**. It combines infrastructure as code, networking, container orchestration, monitoring, secure administration, automated backups, recovery testing and GitHub Actions with AWS OIDC.
 
-> **Current status: the application stack is offline.** I deployed and tested the stack, demonstrated recovery from an S3 backup, then destroyed the application resources to control costs. The teardown audit completed successfully. The separate Terraform-state and application-backup S3 buckets remain intentionally, so small storage charges may continue.
+> **Current status: deployed.** Terraform deployment workflow [run #20](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39461906090) completed on 20 October 2026 with 47 resources added, 0 changed and 0 destroyed. The operator reports that `https://uptime.pedromartins9.me` serves the application and HTTP redirects to HTTPS. Post-deployment checks for target health, dynamic port mapping, alarms and automated backup execution remain to be recorded. The separate Terraform-state and application-backup S3 buckets remain intentionally and may incur storage charges.
 
 ## At a glance
 
@@ -18,7 +18,7 @@ A cloud/DevOps portfolio project that deploys [Uptime Kuma](https://github.com/l
 
 ## Architecture
 
-This is the architecture used during testing; it is **not currently running**.
+This architecture was redeployed on 20 October 2026. The operator reports the public hostname is working and HTTP redirects to HTTPS; remaining operational checks are tracked in [portfolio readiness](docs/portfolio-readiness.md).
 
 ~~~mermaid
 flowchart TB
@@ -72,7 +72,7 @@ The validation workflow has passed, and the full-history Gitleaks scan has been 
 - **ECS on EC2 instead of Fargate:** this project was built to learn both container orchestration and the EC2 capacity layer. The trade-off is more responsibility for instance capacity, the ECS agent, launch templates and Auto Scaling.
 - **SQLite with consistent S3 backups instead of a shared filesystem:** a SQLite-consistent snapshot, checksum sidecar and startup integrity check made recovery testable without introducing EFS or an external database. The design uses a single active application task and restore-on-boot; it is not a multi-writer database design.
 - **One active ECS task:** this avoids multiple tasks maintaining independent local SQLite copies. At scale, I would first establish a persistence architecture supported by the application, then test multi-task behavior and availability zones rather than simply increasing desired count.
-- **TLS termination at the ALB:** Terraform looks up an already-requested ACM certificate for `uptime.pedromartins9.me`, serves HTTPS on port 443, and redirects HTTP on port 80 to HTTPS with `HTTP_301`. The certificate must be in `eu-west-1`, have status `ISSUED`, and cover the configured hostname. The default certificate lookup matches ACM's primary domain name exactly. If the issued certificate uses a different primary domain (for example, the apex or a wildcard) but its certificate names still cover `uptime.pedromartins9.me`, set the GitHub Actions variable `ACM_CERTIFICATE_LOOKUP_DOMAIN` to that exact primary domain; locally use `TF_VAR_acm_certificate_lookup_domain`. The ALB is intended to be internet-accessible over IPv4 TCP 80/443; ECS instance ingress remains limited to dynamic host-port traffic from the ALB security group. DNS records remain managed outside this Terraform root. These code changes have not been applied or tested; the application stack is still offline.
+- **TLS termination at the ALB:** Terraform looks up an already-requested ACM certificate for `uptime.pedromartins9.me`, serves HTTPS on port 443, and redirects HTTP on port 80 to HTTPS with `HTTP_301`. The certificate must be in `eu-west-1`, have status `ISSUED`, and cover the configured hostname. The default certificate lookup matches ACM's primary domain name exactly. If the issued certificate uses a different primary domain (for example, the apex or a wildcard) but its certificate names still cover `uptime.pedromartins9.me`, set the GitHub Actions variable `ACM_CERTIFICATE_LOOKUP_DOMAIN` to that exact primary domain; locally use `TF_VAR_acm_certificate_lookup_domain`. The ALB is intended to be internet-accessible over IPv4 TCP 80/443; ECS instance ingress remains limited to dynamic host-port traffic from the ALB security group. DNS records remain managed outside this Terraform root. Terraform deployment run #20 completed successfully on 20 October 2026. The operator reports that the hostname is routed to the application and HTTP redirects to HTTPS. This confirms the initial deployment and reported redirect, not end-to-end alarm delivery, backup success, or the new instance's ephemeral-port configuration.
 - **Terraform state locking:** the remote S3 backends use native S3 lock files (`use_lockfile = true`) and per-root state keys; the state bucket uses versioning. The bootstrap root still uses local state unless deliberately migrated.
 
 ## Backup schedule and recovery objective
@@ -86,11 +86,11 @@ The previous restore drill demonstrated that the app's existing data returned af
 - [Terraform formatting and validation — successful run](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39039712681)
 - [Gitleaks secret scanning — successful run](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39040173879)
 
-The repository includes the workflows and restore-drill record, but the application is currently offline and no short demo video is available. Total project cost has not yet been extracted from Cost Explorer, so no cost figure is claimed.
+The repository includes the workflows and restore-drill record, and the application has been redeployed at `uptime.pedromartins9.me`. No short demo video is available. Total project cost has not yet been extracted from Cost Explorer, so no cost figure is claimed.
 
 ## Security and known limitations
 
-- **Public HTTPS exposure:** the previous test endpoint was HTTP-only and restricted to one client IP. The revised Terraform configuration is intended to make `uptime.pedromartins9.me` publicly reachable over HTTPS, with HTTP redirected to HTTPS. It has not been applied or tested and the application remains offline. By default, the ACM primary domain must be `uptime.pedromartins9.me`. If it differs, set `ACM_CERTIFICATE_LOOKUP_DOMAIN` to the certificate's exact primary domain, but only when that issued certificate also covers `uptime.pedromartins9.me` in its names/SANs. A certificate for apex `pedromartins9.me` alone does not cover the subdomain. Because the Uptime Kuma login page will be reachable from the internet, use a strong, unique admin password and keep ECS dynamic host ports private behind the ALB security group.
+- **Public HTTPS exposure:** deployment run #20 created the ALB HTTPS listener and HTTP-to-HTTPS redirect, and the operator reports that `uptime.pedromartins9.me` is live with HTTP redirecting to HTTPS. The certificate is looked up in `eu-west-1`; the selected certificate must cover the service hostname. If the certificate's primary domain differs, `ACM_CERTIFICATE_LOOKUP_DOMAIN` must match that exact primary domain, while the certificate's names/SANs must still cover `uptime.pedromartins9.me`. A certificate for apex `pedromartins9.me` alone does not cover the subdomain. Because the login page is internet-accessible, use a strong, unique admin password and keep ECS dynamic host ports private behind the ALB security group. Verify target health and the current EC2 instance's ephemeral-port range as recorded in [portfolio readiness](docs/portfolio-readiness.md).
 - CloudWatch alarm resources are defined, but end-to-end SNS delivery and every alarm condition have not been demonstrated.
 - A separate `terraform/cost-controls/` root defines an account-wide monthly USD budget with actual-spend notifications at 50%, 80% and 100%, excluding credit offsets. It is not enabled until `BUDGET_ALERT_EMAIL` is configured, and email delivery has not yet been tested.
 - Exact S3 object-version/checksum evidence and precise RPO/RTO measurements were not captured during the recovery drill.
@@ -144,7 +144,7 @@ For recovery-test instructions, see [the restore drill](docs/restore-drill.md). 
 
 ### Teardown and costs
 
-The application resources and compute were destroyed after testing. If you deploy a new test stack, inspect the destroy plan and destroy only the main application root after the test. **Do not destroy the state-storage, backup-infrastructure or cost-controls roots as part of routine application teardown.** Check EC2, load balancing, EBS, CloudWatch and billing after teardown. The retained S3 buckets are separate and can continue to incur small charges.
+The current application resources are deployed. When the agreed test window ends, review the destroy plan and destroy only the main application root if you intend to stop the stack. **Do not destroy the state-storage, backup-infrastructure or cost-controls roots as part of routine application teardown.** Check EC2, load balancing, EBS, CloudWatch and billing after teardown. The retained S3 buckets are separate and can continue to incur small charges.
 
 ## Technologies
 
