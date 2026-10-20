@@ -289,6 +289,7 @@ Earlier apply errors showed missing `ec2:RunInstances`, `elasticloadbalancing:Mo
 In **Settings → Secrets and variables → Actions → Variables**, add:
 
 - `AWS_ACCOUNT_ID`: the same 12-digit AWS account ID used in the Terraform variable `aws_account_id`.
+- `TFSTATE_BUCKET`: the name of the existing S3 bucket that stores Terraform state for the application, backup-infra and cost-controls roots. This value is supplied to `terraform init` at runtime; do not put the bucket name back into the tracked backend files.
 - `BUDGET_ALERT_EMAIL`: optional email recipient for the account-wide monthly cost budget. Set it only if you want the budget resource enabled.
 - `MONTHLY_BUDGET_LIMIT_USD`: optional monthly account-wide cost threshold in USD; defaults to `10` in `terraform/cost-controls/`.
 
@@ -310,7 +311,7 @@ The SNS email subscription remains pending until its confirmation link is accept
 
 ## 5. Prove the guardrails
 
-1. Configure `TF_VAR_aws_account_id` for local Terraform commands, or set the equivalent variable input without committing it. Restore the existing state bucket name in the remote backend blocks before any Terraform initialization. In GitHub Actions, configure the `AWS_ACCOUNT_ID` repository variable and both role ARN values above.
+1. In GitHub repository **Settings → Secrets and variables → Actions → Variables**, configure `TFSTATE_BUCKET` with the exact name of the existing Terraform state bucket, plus `AWS_ACCOUNT_ID` and the plan/apply role ARNs. The deployment workflow supplies the bucket to Terraform during `init`; do not edit the tracked backend files to hardcode it. For local commands, export `TFSTATE_BUCKET` and use `terraform init -reconfigure -backend-config="bucket=$TFSTATE_BUCKET"`. Set `TF_VAR_aws_account_id` separately without committing it.
 2. Run **Terraform validation** and make sure formatting and validation pass for the main, state-bootstrap and backup-infrastructure directories.
 3. From Actions, manually dispatch **Terraform deployment** on `main` with mode `plan`. Confirm it assumes the plan role and produces a plan without changing resources.
 4. Review the plan artifact and summary. Plan artifacts may contain sensitive values; the workflow encrypts the plan artifact and retains it for one day.
