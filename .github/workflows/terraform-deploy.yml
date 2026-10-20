@@ -86,7 +86,7 @@ jobs:
 
       - name: Initialize selected Terraform backend
         shell: bash
-        run: terraform -chdir="$TF_ROOT" init -input=false -lockfile=readonly -backend-config="bucket=$TFSTATE_BUCKET"
+        run: terraform -chdir="$TF_ROOT" init -reconfigure -input=false -lockfile=readonly -backend-config="bucket=$TFSTATE_BUCKET"
 
       - name: Create saved plan
         env:
@@ -212,7 +212,7 @@ jobs:
 
       - name: Initialize selected Terraform backend
         shell: bash
-        run: terraform -chdir="$TF_ROOT" init -input=false -lockfile=readonly -backend-config="bucket=$TFSTATE_BUCKET"
+        run: terraform -chdir="$TF_ROOT" init -reconfigure -input=false -lockfile=readonly -backend-config="bucket=$TFSTATE_BUCKET"
 
       - name: Apply only the saved plan produced earlier in this run
         run: terraform -chdir="$TF_ROOT" apply -input=false "$RUNNER_TEMP/tfplan"
