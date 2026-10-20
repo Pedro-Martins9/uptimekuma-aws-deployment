@@ -105,4 +105,4 @@ Use claims like these, which match the recorded tests:
 - Implemented S3-backed application recovery using a SQLite-consistent snapshot, SHA-256 verification and a database-integrity gate; validated recovery by replacing the EC2 instance and confirming existing monitor data returned.
 - Exercised a GitHub Actions OIDC plan/apply workflow with short-lived AWS credentials, an explicit deployment confirmation, an environment approval gate and a short-lived encrypted Terraform-plan artifact.
 
-Avoid claiming the application is currently live, HTTPS has been deployed and tested, alarms have been proven end-to-end, or exact RPO/RTO targets have been measured.
+Avoid unqualified present-tense availability claims without a fresh check; describe the hostname, HTTPS, and infrastructure status as operator-verified at the time of the check. The SNS-to-email path has been tested for the CPU-high alarm only; do not claim recovery notifications or all alarm paths are end-to-end validated until recovery-email delivery and any remaining alarm paths are tested. Do not claim exact measured RPO/RTO.
