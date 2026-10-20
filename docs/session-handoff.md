@@ -4,7 +4,7 @@
 **Repository:** https://github.com/Pedro-Martins9/uptimekuma-aws-deployment  
 **Default branch:** `main`  
 **Current visibility:** public (verified through GitHub repository metadata)  
-**Current app status:** redeployed on 20 October 2026. Terraform workflow [run #20](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39461906090) succeeded (47 added, 0 changed, 0 destroyed). The operator reports that `uptime.pedromartins9.me` serves the application and HTTP redirects to HTTPS. Follow-up checks remain for target health, dynamic port mapping, alarms and a successful backup execution.  
+**Current app status:** redeployed on 20 October 2026. Terraform workflow [run #20](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39461906090) succeeded (47 added, 0 changed, 0 destroyed). The operator reports HTTPS works and HTTP redirects to HTTPS; ECS has one running Uptime Kuma task, the ALB target is healthy on port 3001, and manual backup plus freshness-check runs succeeded. Remaining: verify ephemeral-port configuration, investigate the backup-freshness alarm state, and configure/confirm SNS email delivery.  
 **Domain for HTTPS test:** `pedromartins9.me`; Terraform default hostname: `uptime.pedromartins9.me`. The main application root now references an existing ACM certificate only when it is `ISSUED` in `eu-west-1` and matches the hostname. DNS routing is external to this Terraform root; ACM request/validation is currently being done in the console.
 
 Use this document as the restart point for a future ChatGPT session. The repository is **PUBLIC** and the application was redeployed through the gated workflow on 20 October 2026. The operator reports that the hostname is working and HTTP redirects to HTTPS. Do not start a second apply while the stack is active. Review the pending post-deployment checks and control ongoing spend; publication and basic HTTPS access do not mean all engineering follow-ups are finished.
@@ -34,7 +34,7 @@ The prior application stack was destroyed after the recovery test to control cos
 - The state and app-backup S3 buckets still exist.
 - Terraform reported 19 resources destroyed in the main application root.
 - The main application stack is deployed; the operator reports that the hostname serves the application and HTTP redirects to HTTPS.
-- The application-root SSM backup and freshness associations were recreated by the new deployment; verify a successful SSM backup execution and matching S3 archive/checksum.
+- The operator reports successful manual backup and freshness-check runs. Confirm the archive and checksum objects are present in S3; the execution test is good, while ongoing scheduled-backup reliability should remain an operational check.
 
 The retained buckets are deliberately managed separately from the main app root. Their actual names are account-specific and must stay out of public-facing docs. The GitHub tree uses placeholders. They can continue to incur S3 storage charges; the exact current cost has not been measured here. Do not destroy the state bucket while it is needed by either remote-state root. Do not run routine app teardown from `terraform/bootstrap-state/`, `terraform/backup-infra/` or `terraform/cost-controls/`.
 
@@ -104,7 +104,7 @@ The repository is public. Do not repeat completed history or teardown checks unl
 
 ### Priority 3 — post-deployment verification and evidence
 - [x] **HTTPS and DNS:** workflow run #20 completed, and the operator reports that the domain serves the application with HTTP redirecting to HTTPS. Verify the browser certificate and current ALB target health. The ALB is public on IPv4 ports 80/443; ECS host ports should remain restricted to the ALB security group.
-- [ ] Verify SNS subscription, exercise meaningful CloudWatch alarm transitions to ALARM and back to OK, and separately inspect metric dimensions/threshold behavior.
+- [ ] **SNS notifications are not configured in the current apply.** The workflow maps repository Actions variable `ALERT_EMAIL` to `TF_VAR_alert_email`; if blank, Terraform creates no SNS topic or email subscription and the CloudWatch alarm actions list is empty. Set `ALERT_EMAIL`, run a fresh application plan and verify that it proposes the SNS topic/subscription and alarm-action updates, then complete the gated deploy. Confirm the SNS email subscription and publish a test message before testing alarm transitions to ALARM and back to OK.
 - [ ] Repeat the restore drill with a canary monitor and collect the exact S3 version ID, checksum digest, SSM execution ID, direct SQLite integrity output, termination-request time and first healthy replacement-target time. Record dashboard usability separately; do not claim exact RPO/RTO until directly measured.
 - [ ] Capture sanitized ECS, ALB, dashboard/restore, alarm-email, and GitHub Actions evidence.
 - [ ] After Cost Explorer refreshes, report a cost only with its period, metric, attribution/filter, currency and gross-versus-credit-offset treatment. Include retained S3 costs and don't present account-wide costs as project-only costs.
