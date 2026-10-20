@@ -1,8 +1,8 @@
 # Public release and portfolio readiness
 
 **Review date:** 20 October 2026  
-**Repository state:** public; application stack offline after successful deployment and restore testing.  
-**Portfolio publication status: PUBLISHED.** GitHub repository metadata confirms public visibility. The application remains offline/destroyed; publication does not imply that every follow-up engineering improvement is complete.  
+**Repository state:** public; application stack redeployed on 20 October 2026; the operator reports that the HTTPS hostname works and HTTP redirects to HTTPS.  
+**Portfolio publication status: PUBLISHED.** GitHub repository metadata confirms public visibility. The application is deployed again after the 20 October 2026 Terraform apply; publication and reported HTTPS access do not imply that all operational checks are complete.  
 **Security gate reviewed:** the operator reports a clean full-history Gitleaks scan; GitHub reachable-history inspection covered all 138 commits and found no literal AWS account ID or state/backup bucket name; the current tree is sanitized.  
 **Purpose:** track remaining portfolio presentation and engineering hardening work now that the repository is public.
 
