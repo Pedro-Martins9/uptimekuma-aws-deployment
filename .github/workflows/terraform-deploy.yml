@@ -59,6 +59,17 @@ jobs:
           terraform_version: "1.16.5"
           terraform_wrapper: false
 
+      - name: Validate required AWS account ID variable
+        shell: bash
+        env:
+          AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          if [[ ! "${AWS_ACCOUNT_ID:-}" =~ ^[0-9]{12}$ ]]; then
+            echo "::error::Set the repository Actions variable AWS_ACCOUNT_ID to the 12-digit AWS account ID before running Terraform deployment."
+            exit 1
+          fi
+
       - name: Configure short-lived AWS credentials (plan role)
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
@@ -184,6 +195,17 @@ jobs:
           tar -xzf "$RUNNER_TEMP/tfplan-bundle.tar.gz" -C "$RUNNER_TEMP"
           test -s "$RUNNER_TEMP/tfplan"
           rm -f "$RUNNER_TEMP/tfplan-artifact/tfplan-bundle.tar.gz.enc" "$RUNNER_TEMP/tfplan-bundle.tar.gz"
+
+      - name: Validate required AWS account ID variable
+        shell: bash
+        env:
+          AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          if [[ ! "${AWS_ACCOUNT_ID:-}" =~ ^[0-9]{12}$ ]]; then
+            echo "::error::Set the repository Actions variable AWS_ACCOUNT_ID to the 12-digit AWS account ID before running Terraform deployment."
+            exit 1
+          fi
 
       - name: Configure short-lived AWS credentials (apply role)
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
