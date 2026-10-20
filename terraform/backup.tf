@@ -73,7 +73,7 @@ resource "aws_ssm_association" "daily_backup" {
       cleanup() {
         rm -rf "$BACKUP_DIR" || true
         if [ "$BACKUP_OK" -ne 1 ]; then
-          aws cloudwatch put-metric-data --namespace UptimeKuma/Backup --metric-name BackupSuccess --value 0 --unit Count --dimensions Name=Project,Value=uptimekuma --region eu-west-1 || true
+          aws cloudwatch put-metric-data --namespace UptimeKuma/Backup --metric-name BackupSuccess --value 0 --unit Count --dimensions Project=uptimekuma --region eu-west-1 || true
         fi
       }
       trap cleanup EXIT
@@ -116,7 +116,7 @@ resource "aws_ssm_association" "daily_backup" {
       aws s3 cp "$ARCHIVE" "s3://$BACKUP_BUCKET/$OBJECT_KEY" --sse AES256 --region eu-west-1 --only-show-errors
       aws s3 cp "$BACKUP_DIR/uptimekuma-backup.sha256" "s3://$BACKUP_BUCKET/$CHECKSUM_KEY" --sse AES256 --region eu-west-1 --only-show-errors
       aws s3api head-object --bucket "$BACKUP_BUCKET" --key "$OBJECT_KEY" --region eu-west-1 >/dev/null
-      aws cloudwatch put-metric-data --namespace UptimeKuma/Backup --metric-name BackupSuccess --value 1 --unit Count --dimensions Name=Project,Value=uptimekuma --region eu-west-1
+      aws cloudwatch put-metric-data --namespace UptimeKuma/Backup --metric-name BackupSuccess --value 1 --unit Count --dimensions Project=uptimekuma --region eu-west-1
       BACKUP_OK=1
       echo "Backup succeeded: s3://$BACKUP_BUCKET/$OBJECT_KEY"
     EOT
@@ -154,7 +154,7 @@ resource "aws_ssm_association" "backup_freshness" {
           FRESH=1
         fi
       fi
-      aws cloudwatch put-metric-data --namespace UptimeKuma/Backup --metric-name BackupFresh --value "$FRESH" --unit Count --dimensions Name=Project,Value=uptimekuma --region eu-west-1
+      aws cloudwatch put-metric-data --namespace UptimeKuma/Backup --metric-name BackupFresh --value "$FRESH" --unit Count --dimensions Project=uptimekuma --region eu-west-1
       echo "BackupFresh=$FRESH; S3 LastModified=$LAST_MODIFIED"
     EOT
   }
