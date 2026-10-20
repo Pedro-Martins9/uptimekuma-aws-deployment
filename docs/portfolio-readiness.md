@@ -67,7 +67,7 @@ If you want to independently re-check the persistent buckets in future, these re
       --query 'Contents[].{Key:Key,LastModified:LastModified,Size:Size}' \
       --output table
 
-Expected decision: retain the state bucket and backup bucket if you intend to preserve the recovery evidence or redeploy. The main application destroy does not manage them. The daily backup and hourly freshness SSM associations belonged to the application stack and were removed during teardown, so automated backups are **not running while the app is offline**.
+Expected decision: retain the state bucket and backup bucket while their state and recovery evidence are needed. The main application destroy does not manage them. The daily backup and hourly freshness SSM associations were recreated by the 20 October deployment; verify a recent successful execution and matching archive/checksum objects before considering automated backup healthy.
 
 If you no longer need the buckets, plan their removal separately and deliberately. Do not delete a state bucket while Terraform state still needs it, and do not run the application destroy command from terraform/bootstrap-state/ or terraform/backup-infra/.
 
