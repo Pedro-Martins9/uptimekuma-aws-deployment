@@ -43,6 +43,7 @@ jobs:
       id-token: write
     env:
       TF_ROOT: ${{ inputs.target == 'backup-infra' && 'terraform/backup-infra' || inputs.target == 'cost-controls' && 'terraform/cost-controls' || 'terraform' }}
+      TFSTATE_BUCKET: ${{ vars.TFSTATE_BUCKET }}
       TF_VAR_domain_name: ${{ vars.UPTIME_KUMA_DOMAIN_NAME || 'uptime.pedromartins9.me' }}
       TF_VAR_acm_certificate_lookup_domain: ${{ vars.ACM_CERTIFICATE_LOOKUP_DOMAIN || vars.UPTIME_KUMA_DOMAIN_NAME || 'uptime.pedromartins9.me' }}
     steps:
@@ -70,8 +71,22 @@ jobs:
       - name: Verify AWS identity
         run: aws sts get-caller-identity
 
+      - name: Verify remote-state bucket configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${TFSTATE_BUCKET:-}" ]]; then
+            echo "::error::Configure the existing remote-state S3 bucket name as the TFSTATE_BUCKET repository Actions variable."
+            exit 1
+          fi
+          if [[ "$TFSTATE_BUCKET" == "REPLACE_WITH_EXISTING_TFSTATE_BUCKET" ]]; then
+            echo "::error::TFSTATE_BUCKET is still set to the scrubbed placeholder. Set it to the actual existing bucket name."
+            exit 1
+          fi
+
       - name: Initialize selected Terraform backend
-        run: terraform -chdir="$TF_ROOT" init -input=false -lockfile=readonly
+        shell: bash
+        run: terraform -chdir="$TF_ROOT" init -input=false -lockfile=readonly -backend-config="bucket=$TFSTATE_BUCKET"
 
       - name: Create saved plan
         env:
@@ -131,6 +146,7 @@ jobs:
       id-token: write
     env:
       TF_ROOT: ${{ inputs.target == 'backup-infra' && 'terraform/backup-infra' || inputs.target == 'cost-controls' && 'terraform/cost-controls' || 'terraform' }}
+      TFSTATE_BUCKET: ${{ vars.TFSTATE_BUCKET }}
       TF_VAR_domain_name: ${{ vars.UPTIME_KUMA_DOMAIN_NAME || 'uptime.pedromartins9.me' }}
       TF_VAR_acm_certificate_lookup_domain: ${{ vars.ACM_CERTIFICATE_LOOKUP_DOMAIN || vars.UPTIME_KUMA_DOMAIN_NAME || 'uptime.pedromartins9.me' }}
       TFPLAN_ENCRYPTION_KEY: ${{ secrets.TFPLAN_ENCRYPTION_KEY }}
@@ -181,8 +197,22 @@ jobs:
       - name: Verify AWS identity
         run: aws sts get-caller-identity
 
+      - name: Verify remote-state bucket configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${TFSTATE_BUCKET:-}" ]]; then
+            echo "::error::Configure the existing remote-state S3 bucket name as the TFSTATE_BUCKET repository Actions variable."
+            exit 1
+          fi
+          if [[ "$TFSTATE_BUCKET" == "REPLACE_WITH_EXISTING_TFSTATE_BUCKET" ]]; then
+            echo "::error::TFSTATE_BUCKET is still set to the scrubbed placeholder. Set it to the actual existing bucket name."
+            exit 1
+          fi
+
       - name: Initialize selected Terraform backend
-        run: terraform -chdir="$TF_ROOT" init -input=false -lockfile=readonly
+        shell: bash
+        run: terraform -chdir="$TF_ROOT" init -input=false -lockfile=readonly -backend-config="bucket=$TFSTATE_BUCKET"
 
       - name: Apply only the saved plan produced earlier in this run
         run: terraform -chdir="$TF_ROOT" apply -input=false "$RUNNER_TEMP/tfplan"
