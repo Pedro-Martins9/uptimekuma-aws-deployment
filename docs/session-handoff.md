@@ -4,10 +4,10 @@
 **Repository:** https://github.com/Pedro-Martins9/uptimekuma-aws-deployment  
 **Default branch:** `main`  
 **Current visibility:** public (verified through GitHub repository metadata)  
-**Current app status:** application stack destroyed after successful deployment and restore testing; only separate Terraform state and application-backup S3 storage remain.  
+**Current app status:** redeployed on 20 October 2026. Terraform workflow [run #20](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39461906090) succeeded (47 added, 0 changed, 0 destroyed). The operator reports that `uptime.pedromartins9.me` serves the application and HTTP redirects to HTTPS. Follow-up checks remain for target health, dynamic port mapping, alarms and a successful backup execution.  
 **Domain for HTTPS test:** `pedromartins9.me`; Terraform default hostname: `uptime.pedromartins9.me`. The main application root now references an existing ACM certificate only when it is `ISSUED` in `eu-west-1` and matches the hostname. DNS routing is external to this Terraform root; ACM request/validation is currently being done in the console.
 
-Use this document as the restart point for a future ChatGPT session. It records the current state and ordered next steps. The repository is now **PUBLIC**; GitHub metadata confirms the visibility change. The application stack remains offline/destroyed and must not be redeployed without reviewing the plan and explicitly confirming the test window and intended spend. Publication does not mean every engineering follow-up is finished.
+Use this document as the restart point for a future ChatGPT session. The repository is **PUBLIC** and the application was redeployed through the gated workflow on 20 October 2026. The operator reports that the hostname is working and HTTP redirects to HTTPS. Do not start a second apply while the stack is active. Review the pending post-deployment checks and control ongoing spend; publication and basic HTTPS access do not mean all engineering follow-ups are finished.
 
 ## 1. Project goal and design
 
