@@ -41,7 +41,7 @@ These are static configuration checks. They do not deploy resources, prove alarm
 
 ## 2. Post-destroy audit — complete
 
-The operator confirmed that the post-destroy audit completed successfully: the application stack is gone, no leftover application resources were found, and the separate Terraform-state and application-backup S3 buckets persist. The commands below use placeholders for the bucket names and region. The application backup and freshness SSM associations were part of the destroyed application stack, so scheduled backups are not running while the app is offline.
+The operator confirmed that the post-destroy audit completed successfully for the earlier teardown. On 20 October 2026, deployment workflow [run #20](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39461906090) subsequently created 47 resources, with 0 changes and 0 destroys. The current application stack is deployed again, and the operator reports that the HTTPS hostname works and HTTP redirects to HTTPS. The separate Terraform-state and application-backup S3 buckets persist. The commands below use placeholders for the bucket names and region. Backup and freshness SSM associations were recreated by the application deployment; verify a successful association execution and an archive plus checksum in S3 before treating scheduled backups as validated.
 
 If you want to independently re-check the persistent buckets in future, these read-only commands are available:
 
