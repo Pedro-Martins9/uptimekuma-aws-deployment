@@ -1,6 +1,6 @@
 # Public release and portfolio readiness
 
-**Review date:** 19 October 2026  
+**Review date:** 20 October 2026  
 **Repository state:** public; application stack offline after successful deployment and restore testing.  
 **Portfolio publication status: PUBLISHED.** GitHub repository metadata confirms public visibility. The application remains offline/destroyed; publication does not imply that every follow-up engineering improvement is complete.  
 **Security gate reviewed:** the operator reports a clean full-history Gitleaks scan; GitHub reachable-history inspection covered all 138 commits and found no literal AWS account ID or state/backup bucket name; the current tree is sanitized.  
