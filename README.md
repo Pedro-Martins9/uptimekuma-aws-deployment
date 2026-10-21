@@ -64,7 +64,7 @@ I confirmed that S3 backup tests and alarm/recovery email tests were working, an
 
 ## Security and operating model
 
-The ALB is designed to accept public IPv4 HTTP/HTTPS traffic; HTTP redirects to HTTPS using an ACM certificate in `eu-west-1`. ECS host ports are restricted to traffic from the ALB security group. Since the Uptime Kuma login page is internet-accessible while the demo is running, I use a strong, unique admin password and recommend enabling Uptime Kuma two-factor authentication.
+The ALB is designed to accept public IPv4 HTTP/HTTPS traffic; HTTP redirects to HTTPS using an ACM certificate in `eu-west-1`. ECS host ports are restricted to traffic from the ALB security group. Since the Uptime Kuma login page is internet-accessible while the demo is running, I use a strong, unique admin password and enable Uptime Kuma two-factor authentication before exposing the dashboard publicly.
 
 The app was intended to be time-boxed to control cost. The hostname may be offline when the demo is not running; contact me to arrange a live walkthrough. The Terraform state and application-backup S3 buckets are managed separately from the application stack and can continue to incur storage charges.
 
