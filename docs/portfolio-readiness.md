@@ -1,7 +1,7 @@
 # Public release and portfolio readiness
 
 **Review date:** 21 October 2026  
-**Repository state:** public; application stack redeployed on 20 October 2026; the operator reports that the HTTPS hostname works and HTTP redirects to HTTPS.  
+**Repository state:** public; application stack was redeployed on 20 October 2026; HTTPS and the HTTP-to-HTTPS redirect were last reported working on that date. The README now states that the live demo may be available on request, not that it is continuously available.  
 **Portfolio status: COMPLETED — PORTFOLIO RELEASE.** GitHub confirms public visibility. The operator confirms that the S3 backup path, alarm and recovery email notifications, and AWS budget alerts have been tested/configured. Optional screenshots and repository topics remain presentation polish. Runtime status was last reported on 20 October and was not re-probed during this documentation closeout.  
 **Security gate reviewed:** the operator reports a clean full-history Gitleaks scan; GitHub reachable-history inspection covered all 138 commits and found no literal AWS account ID or state/backup bucket name; the current tree is sanitized.  
 **Purpose:** preserve evidence, limitations and optional presentation improvements for a portfolio project that has reached its completion milestone.
@@ -84,8 +84,8 @@ The operator confirms that S3 backups and alarm email notifications have been te
 - [x] **Reported run cost:** the operator estimates the combined cost of the project runs at approximately €0.20. Treat this as an estimate until supported by a Cost Explorer or billing export with a defined date range and cost treatment.
 - [x] **Secret scanning:** Gitleaks workflow is enabled and the final closeout scan passes on the current documentation head; see the [Gitleaks workflow history](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/workflows/gitleaks.yml).
 - [x] **Terraform validation:** [the latest validation run](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39472903358) passed on the latest Terraform-code commit. Commits since then changed documentation only.
-- [ ] **Optional visual evidence:** if useful for the portfolio, capture the small sanitized pack in [final-evidence.md](final-evidence.md). Do not redeploy or rerun a successful alarm/backup test solely to obtain screenshots.
-- [ ] **Optional cost screenshot:** capture Cost Explorer only if publishing the approximate €0.20 figure as a portfolio claim. Include the date range, currency, cost metric, and credits/refunds treatment; do not imply project-only attribution unless the report supports it.
+- [ ] **Optional visual evidence:** capture a small sanitized screenshot pack and/or a 2–3 minute demo if it materially improves the portfolio. Do not redeploy or rerun successful alarm/backup tests solely to create screenshots.
+- [ ] **Optional cost evidence:** only publish a cost number after collecting Cost Explorer or billing evidence with the date range, currency, cost metric, attribution method and credits/refunds treatment. The README omits the earlier €0.20 estimate until it can be substantiated.
 - [ ] **Optional repository topics:** GitHub metadata shows the description is already set, but no topics are configured. Add `aws`, `terraform`, `ecs`, `devops`, `github-actions`, `oidc`, and `infrastructure-as-code` if you want the final presentation polish.
 - [ ] **Final infrastructure disposition:** keep the app deployed if the live endpoint is useful for demonstrating the project; otherwise perform the reviewed main-root teardown and audit remaining resources. Never destroy the persistent state bucket or backup-infrastructure root as part of routine application teardown.
 
@@ -93,7 +93,7 @@ The operator confirms that S3 backups and alarm email notifications have been te
 
 ## 4. Post-publication housekeeping
 
-The repository is now public; GitHub's repository metadata confirms `visibility: public`. The remaining tasks are presentation checks and metadata, not a visibility blocker.
+The repository is now public; GitHub's repository metadata confirms `visibility: public`. The remaining tasks are presentation polish and metadata, not a visibility blocker.
 
 - [x] **Change repository visibility to public.** Completed 19 October 2026 and verified through GitHub repository metadata.
 - [ ] **Verify public rendering while signed out.** Open the repository in a private/signed-out browser window and check the README, docs, workflow files, architecture diagram and relative links. API metadata confirms public visibility, but the signed-out browser review has not been independently confirmed here.
@@ -101,7 +101,7 @@ The repository is now public; GitHub's repository metadata confirms `visibility:
 - [ ] **Add repository topics.** No topics are currently configured. Suggested topics: `aws`, `terraform`, `ecs`, `devops`, `github-actions`, `oidc`, and `infrastructure-as-code`.
 - [x] **Add a license.** Added the Apache License 2.0 in the root `LICENSE` file and linked it from the README. It licenses this project's original work; third-party tools and dependencies remain under their respective licenses.
 
-Repository settings such as the description and topics must be changed manually; the available GitHub connection used for this review can read and update repository files but does not expose those settings for mutation.
+Repository topics, pinning and profile links should be completed as GitHub/profile housekeeping after the evidence and README are in place. The available GitHub connection can update repository files but does not expose topics or pinning for mutation.
 
 ## 5. Accurate resume / portfolio wording
 
