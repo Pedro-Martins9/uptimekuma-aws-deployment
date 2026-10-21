@@ -144,7 +144,7 @@ For recovery-test instructions, see [the restore drill](docs/restore-drill.md). 
 
 ### Teardown and costs
 
-The current application resources are deployed. When the agreed test window ends, review the destroy plan and destroy only the main application root if you intend to stop the stack. **Do not destroy the state-storage, backup-infrastructure or cost-controls roots as part of routine application teardown.** Check EC2, load balancing, EBS, CloudWatch and billing after teardown. The retained S3 buckets are separate and can continue to incur small charges.
+The current application resources are deployed according to the latest handoff; verify live service and target health before making a current availability claim. When the agreed test window ends, review the destroy plan and destroy only the main application root if you intend to stop the stack. **Do not destroy the state-storage, backup-infrastructure or cost-controls roots as part of routine application teardown.** Check EC2, load balancing, EBS, CloudWatch and billing after teardown. The retained S3 buckets are separate and can continue to incur storage charges. The project is considered complete as a portfolio project when the final backup-pair and recovery-email checks are evidenced, documentation is consistent, and remaining cost controls are either enabled or explicitly deferred.
 
 ## Technologies
 
