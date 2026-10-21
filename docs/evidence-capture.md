@@ -93,20 +93,23 @@ After Cost Explorer has refreshed, select the date range covering the deployment
 
 Do not invent a cost figure from instance prices or a short test duration. Record the exact date range, metric, tag/filter, currency and value from the billing report.
 
-## Final evidence summary template
+## Recorded closeout status — 21 October 2026
 
-| Item | Result |
-|---|---|
-| Tested commit | To be recorded |
-| Deployment window (UTC) | To be recorded |
-| ECS service / ALB health | To be recorded |
-| Restore request-to-healthy-target duration | To be measured |
-| Dashboard data restored | Pass/fail, with sanitized evidence |
-| Backup checksum and database integrity | Exact evidence to be recorded |
-| SNS email and OK transition | To be tested |
-| HTTPS | Implemented / not implemented |
-| Cost date range and metric | To be recorded from Cost Explorer |
-| Reported cost and treatment of credits | To be recorded; no estimate |
-| Teardown and post-destroy audit | To be recorded |
+| Item | Current status | Evidence / limit |
+|---|---|---|
+| Application deployment | Pass | [Terraform deployment run #20](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39461906090); 47 added, 0 changed, 0 destroyed |
+| Backup freshness fix | Pass | [Terraform deployment run #22](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39473186374); operator confirms datapoints appeared and the freshness alarm cleared |
+| ECS / ALB health | Operator-reported pass | One running task and a healthy target were reported on 20 October 2026; not independently re-probed during this closeout |
+| HTTPS and HTTP redirect | Operator-reported pass | Reported working on 20 October 2026; capture a sanitized browser view only if a visual portfolio image is needed |
+| Backup and recovery | Pass, with measurement limits | [Restore-drill record](restore-drill.md) documents restoration of previous monitor data after instance replacement. Exact RPO/RTO and direct SQLite output were not recorded |
+| S3 backup test | Operator-confirmed pass | The operator confirms backup tests are working. The newest archive/checksum object pair was not independently inspected in this documentation-only session |
+| Alert and recovery email | Operator-confirmed pass | The operator confirms both are tested; deployment wiring is documented in [run #21](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39465845112) |
+| Budget alerts | Operator-confirmed configured | A budget threshold (for example €10) is not the same as actual spend; record whether a notification is actual- or forecast-based |
+| Reported test/deployment cost | Approx. €0.20, operator-reported | No independent Cost Explorer export was attached. For a public numeric claim, preserve the range, currency, cost metric, project/account attribution, and credits/refunds treatment |
+| Terraform validation | Pass | [Latest validation on the last Terraform-code commit](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39472903358); later commits are documentation-only |
+| Gitleaks | Pass | [Current-head Gitleaks run](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39597613731) |
+| Teardown | Not performed after latest redeployment | Keep or remove the app intentionally. If removing it, preserve the remote state and backup roots unless you have deliberately decided they are no longer needed |
 
-Use [final-evidence.md](final-evidence.md) for the evidence pack required for this closeout. The table above is a template for a future, more precise recovery drill; it is not a blocker for marking the current portfolio project complete. The current application deployment is recorded in the README and handoff.
+The table above is the honest closeout record; it separates operator-confirmed live tests from evidence independently retrievable from GitHub. Exact recovery timing and exact total cost are optional deeper measurements, not blockers for labelling the portfolio project complete.
+
+See [final-evidence.md](final-evidence.md) for the small recommended screenshot set.
