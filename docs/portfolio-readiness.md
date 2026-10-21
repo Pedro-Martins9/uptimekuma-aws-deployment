@@ -2,9 +2,9 @@
 
 **Review date:** 21 October 2026  
 **Repository state:** public; application stack redeployed on 20 October 2026; the operator reports that the HTTPS hostname works and HTTP redirects to HTTPS.  
-**Portfolio publication status: PUBLISHED.** GitHub repository metadata confirms public visibility. The application is deployed again after the 20 October 2026 Terraform apply; publication and reported HTTPS access do not imply that all operational checks are complete.  
+**Portfolio status: COMPLETED — PORTFOLIO RELEASE.** GitHub confirms public visibility. The operator confirms that the S3 backup path, alarm and recovery email notifications, and AWS budget alerts have been tested/configured. Optional screenshots and repository topics remain presentation polish. Runtime status was last reported on 20 October and was not re-probed during this documentation closeout.  
 **Security gate reviewed:** the operator reports a clean full-history Gitleaks scan; GitHub reachable-history inspection covered all 138 commits and found no literal AWS account ID or state/backup bucket name; the current tree is sanitized.  
-**Purpose:** track remaining portfolio presentation and engineering hardening work now that the repository is public.
+**Purpose:** preserve evidence, limitations and optional presentation improvements for a portfolio project that has reached its completion milestone.
 
 ## 1. Publication security gate — PASS
 
@@ -111,4 +111,4 @@ Use claims like these, which match the recorded tests:
 - Implemented S3-backed application recovery using a SQLite-consistent snapshot, SHA-256 verification and a database-integrity gate; validated recovery by replacing the EC2 instance and confirming existing monitor data returned.
 - Exercised a GitHub Actions OIDC plan/apply workflow with short-lived AWS credentials, an explicit deployment confirmation, an environment approval gate and a short-lived encrypted Terraform-plan artifact.
 
-Avoid unqualified present-tense availability claims without a fresh check; describe the hostname, HTTPS, and infrastructure status as operator-verified at the time of the check. The SNS-to-email path has been tested for the CPU-high alarm only; do not claim recovery notifications or all alarm paths are end-to-end validated until recovery-email delivery and any remaining alarm paths are tested. Do not claim exact measured RPO/RTO.
+Avoid unqualified present-tense availability claims without a fresh check; describe the hostname, HTTPS, and infrastructure status as operator-verified at the time of the check. The operator confirms alarm and recovery email delivery tests are complete. Do not imply that every individual alarm's metric threshold was separately exercised unless the evidence proves it. Do not claim exact measured RPO/RTO or present the approximate €0.20 operator-reported spend as an independently audited billing total.
