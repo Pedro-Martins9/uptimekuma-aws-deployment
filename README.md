@@ -31,6 +31,8 @@ flowchart TB
 
 ## What I verified
 
+The items below summarize the recorded tests and closeout checks. They do not imply that the live application was re-probed during this documentation update.
+
 ### Recovery after instance replacement
 
 1. A Systems Manager backup job created a SQLite-consistent snapshot and uploaded a timestamped archive and SHA-256 sidecar to S3.
