@@ -33,7 +33,7 @@ If the portfolio should stay very lean, items 1–4 are the useful engineering p
 
 ## 3. How to report the cost
 
-The README deliberately omits the earlier approximately €0.20 figure because it is an operator estimate, not a verified billing total. Only publish a measured cost after recording the date range, currency, selected cost metric, credits/refunds treatment, and whether the figure is project-attributed or account-wide.
+The README deliberately omits the unverified cost estimate. Only publish a measured cost after recording the date range, currency, selected cost metric, credits/refunds treatment, and whether the figure is project-attributed or account-wide.
 
 Budgets are thresholds, not evidence that the threshold amount was spent. Record whether each notification is based on **actual** or **forecasted** cost. A forecast alert can occur while actual spend is lower, and AWS notes that Budgets updates can lag resource usage. Do not describe a €10 configured threshold as €10 spent unless the billing data supports that.
 
