@@ -33,7 +33,7 @@ If the portfolio should stay very lean, items 1–4 are the useful engineering p
 
 ## 3. How to report the cost
 
-The operator's current estimate for the project runs is **approximately €0.20**. This is an operator-reported estimate, not a cost export attached to this repository. Only publish it as a measured project total after recording the date range, currency, selected cost metric, credits/refunds treatment, and whether the figure is project-attributed or account-wide.
+I have not attached a Cost Explorer export, so the README does not publish a project cost total. The previously discussed **approximately €0.20** figure was an operator estimate, not a verified billing total. Only publish a measured total after recording the date range, currency, selected cost metric, credits/refunds treatment, and whether the figure is project-attributed or account-wide.
 
 Budgets are thresholds, not evidence that the threshold amount was spent. Record whether each notification is based on **actual** or **forecasted** cost. A forecast alert can occur while actual spend is lower, and AWS notes that Budgets updates can lag resource usage. Do not describe a €10 configured threshold as €10 spent unless the billing data supports that.
 
@@ -48,7 +48,7 @@ Official references: [AWS Budgets — create a cost budget](https://docs.aws.ama
 - [x] The current dynamic host-port path is marked operationally verified in the handoff.
 - [x] Budgets are configured, according to the operator.
 - [x] Gitleaks passed on the current closeout commit.
-- [ ] Optionally capture the sanitized screenshots above and add them under a directory such as `docs/evidence/`.
-- [ ] Decide whether to retain the live stack for portfolio demonstration or do a final controlled teardown. If tearing down, preserve the separate state/backup storage roots and audit remaining billable resources.
+- [ ] Capture and publish a small set of sanitized screenshots if they materially improve the portfolio page. No redeployment or repeat backup/alarm test is needed solely for screenshots.
+- [ ] Decide whether to retain the live stack for a scheduled demo window or perform a controlled application-root teardown. If tearing down, preserve the separate state/backup storage roots and audit remaining billable resources.
 
 **Definition of finished:** the public repo explains the design and its limits, the links above substantiate CI/deployment/recovery work, operator-confirmed backup and notification tests are recorded accurately, and the cost statement is qualified. Exact RPO/RTO and a fully attributed cost report are optional enhancements, not blockers.
