@@ -99,6 +99,7 @@ The repository is now public; GitHub's repository metadata confirms `visibility:
 - [ ] **Verify public rendering while signed out.** Open the repository in a private/signed-out browser window and check the README, docs, workflow files, architecture diagram and relative links. API metadata confirms public visibility, but the signed-out browser review has not been independently confirmed here.
 - [x] **Set a repository description.** GitHub metadata currently shows: "Terraform-managed Uptime Kuma on ECS/EC2 with AWS OIDC deployments, CloudWatch monitoring, and S3 backup/restore."
 - [ ] **Add repository topics.** No topics are currently configured. Suggested topics: `aws`, `terraform`, `ecs`, `devops`, `github-actions`, `oidc`, and `infrastructure-as-code`.
+- [ ] **Add demo evidence.** A short 2–3 minute walkthrough and 3–4 sanitized screenshots would make the project easier to evaluate at a glance. Do not repeat successful backup or alarm tests solely to create evidence.
 - [x] **Add a license.** Added the Apache License 2.0 in the root `LICENSE` file and linked it from the README. It licenses this project's original work; third-party tools and dependencies remain under their respective licenses.
 
 Repository topics, pinning and profile links should be completed as GitHub/profile housekeeping after the evidence and README are in place. The available GitHub connection can update repository files but does not expose topics or pinning for mutation.
