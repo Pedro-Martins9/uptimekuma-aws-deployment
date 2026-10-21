@@ -1,10 +1,10 @@
 # Session handoff — Uptime Kuma AWS portfolio project
 
-**Last updated:** 20 October 2026  
+**Last updated:** 21 October 2026  
 **Repository:** https://github.com/Pedro-Martins9/uptimekuma-aws-deployment  
 **Default branch:** `main`  
 **Current visibility:** public (verified through GitHub repository metadata)  
-**Current app status:** redeployed on 20 October 2026. Terraform workflow [run #20](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39461906090) succeeded (47 added, 0 changed, 0 destroyed). The operator reports HTTPS works and HTTP redirects to HTTPS; ECS has one running Uptime Kuma task, the ALB target is healthy, and manual backup plus freshness-check runs succeeded. Backup freshness fix verified live: the operator confirms `BackupFresh` datapoints are visible with the intended dimensions and the freshness alarm has cleared. The ALB-to-ECS dynamic host-port path is operationally verified: the ECS task maps container port 3001 to host port 32768, the security-group rules permit TCP 32768–65535, and the previously observed kernel ephemeral range 32768–60999 falls within that range. Remaining full-audit items: recovery (`OK`) email and the latest S3 archive/checksum pair.  
+**Current app status:** redeployed on 20 October 2026. Terraform workflow [run #20](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39461906090) succeeded (47 added, 0 changed, 0 destroyed). The operator reported HTTPS and HTTP-to-HTTPS redirection working, ECS running one task, a healthy ALB target, and successful backup/freshness checks. On 21 October, the operator confirmed S3 backup tests and alarm email tests (including recovery notifications) are complete, and budgets are configured. The freshness metric fix is deployed and the alarm cleared. The ALB-to-ECS dynamic host-port path is operationally verified: container port 3001 mapped to host port 32768; security groups permit TCP 32768–65535; the previously observed kernel ephemeral range 32768–60999 is covered. The operator estimates cumulative project-run cost at approximately €0.20; this is not an independently audited Cost Explorer total. No additional live test is required solely to close out the portfolio.  
 **Domain for HTTPS test:** `pedromartins9.me`; Terraform default hostname: `uptime.pedromartins9.me`. The main application root now references an existing ACM certificate only when it is `ISSUED` in `eu-west-1` and matches the hostname. DNS routing is external to this Terraform root; ACM request/validation is currently being done in the console.
 
 Use this document as the restart point for a future ChatGPT session. The repository is **PUBLIC** and the application was redeployed through the gated workflow on 20 October 2026. The operator reports that the hostname is working and HTTP redirects to HTTPS. Do not start a second apply while the stack is active. Review the pending post-deployment checks and control ongoing spend; publication and basic HTTPS access do not mean all engineering follow-ups are finished.
@@ -85,44 +85,25 @@ Latest publication-readiness update: [commit `bd505d043bcaebfb8aaeb802468ceb93db
 
 **Security and history status (19 October 2026):** the current tracked tree uses placeholders for account-specific values. I inspected the diffs of all 138 commits reachable from `main` through GitHub's API for concrete 12-digit AWS account IDs and literal state/backup bucket names; none were found. GitHub's refs endpoint exposed only `refs/heads/main`, with no tag refs. The operator confirmed that `gitleaks detect` returned no findings. No further force-push/history rewrite was performed because this reachable-history audit found no targeted literals to remove. This does not erase copies in local clones or guarantee immediate removal of GitHub's unreachable-object caches. Keep old local clones private and do not restore removed identifiers. Do not leave the old 'history cleanup is a publication blocker' wording in future docs.
 
-## 5. Completion definition — final closeout
+## 5. Final closeout status — 21 October 2026
 
-The project is already published; do not use "finished" to imply a permanently running production service. Close the remaining portfolio milestone after these steps:
+**Decision: the project is complete as a portfolio release.** The application stack was deployed successfully, the prior EC2 replacement restore drill is documented, and the operator confirms the S3 backup path, alarm and recovery email notifications, and AWS budget alerts are working. The approximate combined project-run cost reported by the operator is €0.20. No AWS account query or independent Cost Explorer export was performed during this documentation closeout.
 
-1. Read-only inspect the newest timestamped S3 archive and its matching SHA-256 sidecar. Record sanitized output showing the pair matches. No extra restore drill is required to support the existing recovery claim unless you specifically want tighter recovery evidence.
-2. In the isolated test window, verify the recovery (`OK`) email from a safe alarm transition and return the alarm to normal. Record the result.
-3. Capture a small sanitized evidence set: successful deployment run, HTTPS/redirect and healthy target, prior restore success, latest archive/checksum pair, and alarm/recovery email.
-4. Decide the cost-controls root explicitly: apply the account-wide budget after reviewing scope and recipient, or document that budget alerts are deferred. Review retained S3 bucket usage and current spend without publishing bucket names/account IDs.
-5. Complete portfolio polish: verify public rendering and relative links while signed out, set the GitHub repository description, and add topics.
-6. Make README, readiness checklist, and handoff wording consistent. Run validation and Gitleaks after these documentation updates.
-7. After the agreed test window, use the documented controlled teardown, audit remaining billable resources, and retain state/backup buckets deliberately. This is a cost-control action, not a prerequisite to claim that the portfolio project was built and tested.
+Evidence links:
+- [Successful application deployment — run #20](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39461906090)
+- [SNS/email alarm deployment — run #21](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39465845112)
+- [Backup freshness fix deployed — run #22](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39473186374)
+- [Terraform validation](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39472903358)
+- [Gitleaks on the current documentation closeout commit](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39597613731)
+- [Restore-drill record](restore-drill.md)
+- [Final evidence pack and screenshot plan](final-evidence.md)
 
-**Definition of done:** public documentation is internally consistent; current security/validation checks pass; recovery and backup claims have the evidence actually captured; notification test results are accurately scoped; costs and persistent storage are accounted for. Exact RPO/RTO or project-only cost claims are optional and must not be invented.
+Remaining items are portfolio polish, not deployment blockers:
+- [ ] Optionally capture the sanitized screenshots listed in [final-evidence.md](final-evidence.md). Use existing output and read-only console views; do not repeat successful backup or alarm tests just for screenshots.
+- [ ] Optionally add GitHub repository topics. The repository description is already set; GitHub currently reports no topics.
+- [ ] Decide whether to retain the live app for demonstration. If retained, keep budgets enabled and monitor recurring charges. If removed, use a reviewed teardown of only the application root and audit billable resources; preserve Terraform state and backup storage intentionally.
 
-## 5. Prioritized next-session plan
-
-The repository is public. Do not repeat completed history or teardown checks unless new commits, alerts, or evidence justify doing so.
-
-### Priority 1 — finish post-publication housekeeping (no AWS spend)
-- [x] Change repository visibility to public and verify the GitHub metadata reports `visibility: public`.
-- [ ] Open the repository in a signed-out/private browser window and verify README, docs, workflow files, architecture diagram and relative links render correctly.
-- [ ] Set a concise repository description. The GitHub repository metadata still has an empty description. Suggested: "Terraform-managed Uptime Kuma on ECS/EC2 with OIDC delivery, CloudWatch monitoring and S3 backup/restore."
-- [ ] Add relevant topics: `aws`, `terraform`, `ecs`, `devops`, `github-actions`, `oidc`, `infrastructure-as-code`. GitHub metadata currently reports no topics.
-- [x] Add Apache License 2.0 at the repository root and link it from the README. It covers the project's original work; third-party tools and dependencies remain subject to their own licenses.
-
-### Priority 2 — verify cost protection and deployment identity before redeployment
-- [ ] Read-only review the two retained S3 buckets, their purpose and ongoing storage use. Preserve the state bucket while either remote-state root depends on it; don't use application teardown to delete persistent storage.
-- [ ] Decide whether to enable `terraform/cost-controls/`. It defines an account-wide monthly budget (default USD 10) with actual-spend notifications at 50%, 80% and 100%, excluding credits. Set the intended notification email, review the account-wide scope and apply it only after an approved plan. Budget notifications are not a hard spending cap.
-- [ ] Before any workflow deployment, verify GitHub repository variables/secrets, `aws-deploy` environment protection/reviewers, AWS OIDC trust conditions, and plan/apply role permissions. These account settings have not been independently verified from the repository-file review.
-- [ ] Keep the current stack deployed only for the agreed test window, monitor spend, and plan a controlled teardown when testing is finished.
-
-### Priority 3 — post-deployment verification and evidence
-- [x] **HTTPS and DNS:** workflow run #20 completed, and the operator reports that the domain serves the application with HTTP redirecting to HTTPS. Verify the browser certificate and current ALB target health. The ALB is public on IPv4 ports 80/443; ECS host ports should remain restricted to the ALB security group.
-- [x] **SNS alarm-email path configured and partially tested:** deployment [run #21](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39465845112) created the SNS topic/subscription and updated ten alarms; the operator confirmed the email subscription and manually tested the CPU-high alarm, receiving an alert email. Remaining: verify the recovery (`OK`) email and, where useful, test email delivery for the now-recovered backup-freshness alarm.
-- [ ] Repeat the restore drill with a canary monitor and collect the exact S3 version ID, checksum digest, SSM execution ID, direct SQLite integrity output, termination-request time and first healthy replacement-target time. Record dashboard usability separately; do not claim exact RPO/RTO until directly measured.
-- [ ] Capture sanitized ECS, ALB, dashboard/restore, alarm-email, and GitHub Actions evidence.
-- [ ] After Cost Explorer refreshes, report a cost only with its period, metric, attribution/filter, currency and gross-versus-credit-offset treatment. Include retained S3 costs and don't present account-wide costs as project-only costs.
-- [ ] Improve and test the teardown procedure, which previously required reducing ASG desired capacity to zero and replanning. Audit the account after teardown and preserve the separate state/backup roots.
+**Completion boundary:** do not claim exact measured RPO/RTO, a project-only cost, or independently verified current runtime health unless the relevant evidence supports that claim. The exact €0.20 amount is an operator estimate, and the documented live-service state was last reported on 20 October 2026.
 
 ## 6. Technical guardrails
 
@@ -137,4 +118,4 @@ The repository is public. Do not repeat completed history or teardown checks unl
 
 ## 7. Quick prompt for the next ChatGPT session
 
-> Continue the Uptime Kuma AWS portfolio project from this handoff. The repository is public, and the application stack was redeployed successfully on 20 October 2026 through workflow run #20 (47 added, 0 changed, 0 destroyed). The operator reports that `uptime.pedromartins9.me` serves the application and HTTP redirects to HTTPS. Current checks reported by the operator: one ECS task running, ALB target healthy on port 3001, manual backup and freshness-check runs succeed, SNS subscription confirmed, and a controlled CPU-high alarm test generated an email. The `BackupFresh`/`BackupSuccess` metric-dimension fix (commit [`2b4b95b`](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/commit/2b4b95b36c604cbb5cd2d56c798a23962365f0e5)) is confirmed working live: datapoints are visible and the freshness alarm has cleared. Port-path verification is complete for the current deployment: ECS host port 32768 is within the configured 32768–65535 security-group range, and the previously observed kernel range 32768–60999 is covered. For the full audit, confirm the latest archive/checksum pair in S3 and the recovery email. Capture sanitized endpoint and infrastructure evidence, review cost alerts and Cost Explorer, then perform a controlled teardown when the test window ends. Keep ECS host ports private behind the ALB security group and account-specific IDs and bucket names out of public files.
+> Final closeout state as of 21 October 2026: this project is complete as a portfolio release. The operator confirms S3 backups, alarm and recovery email notifications, and AWS budget alerts are working; reported combined test/deployment spend is approximately €0.20, not independently audited. Do not redeploy or repeat those tests solely for screenshots. Use [docs/final-evidence.md](final-evidence.md) for the small sanitized evidence pack. Current-head Gitleaks passed at [run #39597613731](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39597613731); Terraform validation passed on the latest Terraform-code commit at [run #39472903358](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39472903358). The app deployment and backup metric fix are recorded in runs #20 and #22. Dynamic host-port configuration is already operationally verified for the deployment. Optional final polish: capture screenshots, add repository topics, and decide whether to retain the live service or run a controlled application-root teardown. Preserve the separate state and backup storage, keep account-specific values out of public files, and do not claim exact RPO/RTO or an independently measured cost without evidence.
