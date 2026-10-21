@@ -68,7 +68,7 @@ The ALB is designed to accept public IPv4 HTTP/HTTPS traffic; HTTP redirects to 
 
 The app was intended to be time-boxed to control cost. The hostname may be offline when the demo is not running; contact me to arrange a live walkthrough. The Terraform state and application-backup S3 buckets are managed separately from the application stack and can continue to incur storage charges.
 
-I have not attached an independently audited Cost Explorer export, so I am **not publishing a project cost total**. The earlier approximately €0.20 figure was an estimate of project runs, not a verified billing total. A configured budget threshold is a notification setting, not proof that that amount was spent.
+I have not attached an independently audited Cost Explorer export, so I am **not publishing a project cost total**. A configured budget threshold is a notification setting, not proof that that amount was spent.
 
 ## Repository structure
 
