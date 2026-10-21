@@ -13,7 +13,7 @@ The operator confirms that S3 backups and alarm email notifications have already
 | SNS topic/subscription and alarm wiring were deployed | [Deployment run #21](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39465845112) |
 | Backup metric fix was deployed successfully | [Deployment run #22](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39473186374) |
 | Terraform formatting and validation passed | [Terraform validation run](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39472903358) |
-| Secret scan passed on the current documented closeout commit | [Gitleaks run](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39597613731) |
+| Secret scanning | [Gitleaks workflow and latest run](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/workflows/gitleaks.yml) |
 | Recovery after EC2 replacement was demonstrated | [Restore-drill record](restore-drill.md) |
 | Architecture, setup and limitations are documented | [README](../README.md), [OIDC setup](oidc-setup.md) |
 
