@@ -1,8 +1,8 @@
 # Portfolio evidence capture
 
-Use this checklist during one deliberately time-boxed test deployment. The application stack is currently offline. This document prepares the evidence workflow; it does not mean another deployment or alarm test has run.
+This runbook supports evidence capture for the deployment completed on 20 October 2026. The operator confirms S3 backups and alarm email tests are successful. No new deployment or repeated backup/alarm test is needed just to finish the portfolio. Capture the smallest useful sanitized evidence set from existing logs and read-only console views; the pre-deployment checklist below is for future redeployments only.
 
-## Before deployment
+## Pre-deployment checklist (for future redeployments)
 
 - [ ] Agree the test window and acceptable spend before applying anything. Review the entire Terraform plan and confirm the target AWS account.
 - [ ] Configure the existing remote-state bucket name in each backend block and set `TF_VAR_aws_account_id`. For GitHub Actions, configure `AWS_ACCOUNT_ID`, the role ARNs, `TFPLAN_ENCRYPTION_KEY`, `BUDGET_ALERT_EMAIL` and (if needed) `MONTHLY_BUDGET_LIMIT_USD`.
@@ -109,4 +109,4 @@ Do not invent a cost figure from instance prices or a short test duration. Recor
 | Reported cost and treatment of credits | To be recorded; no estimate |
 | Teardown and post-destroy audit | To be recorded |
 
-Only change a status to pass after collecting the evidence. The current project README must continue to describe the stack as offline until the next test deployment is explicitly completed.
+Use [final-evidence.md](final-evidence.md) for the evidence pack required for this closeout. The table above is a template for a future, more precise recovery drill; it is not a blocker for marking the current portfolio project complete. The current application deployment is recorded in the README and handoff.
