@@ -1,163 +1,115 @@
-# Uptime Kuma on AWS with Terraform
+# Uptime Kuma on AWS — Terraform, ECS, CI/CD and Recovery
 
-A cloud/DevOps portfolio project that deploys [Uptime Kuma](https://github.com/louislam/uptime-kuma) on **Amazon ECS using EC2 capacity**. It combines infrastructure as code, networking, container orchestration, monitoring, secure administration, automated backups, recovery testing and GitHub Actions with AWS OIDC.
+I deployed [Uptime Kuma](https://github.com/louislam/uptime-kuma) on **Amazon ECS using EC2 capacity**, with infrastructure provisioned by Terraform and deployments authenticated through GitHub Actions OIDC.
 
-> **Portfolio status: completed; application deployed (last operator-reported live check: 20 October 2026).** Deployment [run #20](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39461906090) created the application stack (47 added, 0 changed, 0 destroyed). Follow-up [run #21](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39465845112) connected ten alarms to SNS email, and [run #22](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39473186374) deployed the backup metric fix. On 21 October, the operator confirmed S3 backup tests, alarm and recovery email tests, and AWS budget alerts are working/configured. The ALB-to-ECS dynamic host-port path was operationally verified on 20 October; see [portfolio readiness](docs/portfolio-readiness.md). The operator estimates total charges across project runs at approximately **€0.20**; this is not an independently audited Cost Explorer total. See the [final evidence pack](docs/final-evidence.md) for evidence and reporting limitations. The separate Terraform-state and application-backup S3 buckets persist and may continue to incur storage charges.
+> **Portfolio project completed.** I demonstrated recovery after an EC2 replacement, restoring existing monitor configuration and history from an S3 backup whose SHA-256 checksum and SQLite integrity are validated before the ECS agent starts. The dashboard was usable within approximately **13 minutes 11 seconds of replacement launch** in the recorded drill; this is an observed upper bound, not a formally measured RTO. The application was last reported live on 20 October 2026. **The live demo may be available on request**; it is not intended to be continuously hosted.
 
-## At a glance
+## Results
 
-| Area | What this project demonstrates |
-|---|---|
-| Infrastructure as code | Terraform-managed VPC, security groups, ALB, ECS, EC2 Auto Scaling, IAM and CloudWatch |
-| Container orchestration | ECS on EC2 with a capacity provider and dynamic host-port mapping |
-| Secure administration | Systems Manager instead of public SSH access |
-| Recovery | SQLite-consistent backup, S3 storage, SHA-256 verification and integrity-checked restore |
-| CI/CD identity | GitHub Actions using short-lived AWS credentials through OIDC, with separate plan and gated apply roles |
-| Cost control | Time-boxed test deployments, documented teardown and separate persistent storage |
-| Repository checks | Terraform formatting/validation workflow and Gitleaks secret scanning |
+- **Infrastructure as code:** Terraform-managed VPC, security groups, Application Load Balancer, ECS cluster/service, EC2 Auto Scaling Group and capacity provider.
+- **Recovery demonstrated:** SQLite-consistent application backup to S3, SHA-256 verification, database-integrity check, and restoration of previous monitor data after EC2 replacement.
+- **Deployment security:** GitHub Actions OIDC with short-lived AWS credentials, separate plan/apply roles, explicit apply confirmation, a protected deployment environment, and an encrypted short-retention Terraform plan artifact.
+- **Operations and alerts:** CloudWatch logs and alarms, SNS email notifications, Systems Manager administration without public SSH, and a backup-freshness custom metric.
 
 ## Architecture
 
-This architecture was redeployed on 20 October 2026. The operator reports the public hostname is working and HTTP redirects to HTTPS; remaining operational checks are tracked in [portfolio readiness](docs/portfolio-readiness.md).
-
-~~~mermaid
+```mermaid
 flowchart TB
-    Browser[Browser] --> ALB[Application Load Balancer]
+    Browser[Browser] --> ALB[Application Load Balancer<br/>HTTPS via ACM]
     ALB --> TG[Target group and health checks]
-    TG --> Service[ECS service and Uptime Kuma task]
-    Service --> EC2[EC2 capacity managed by Auto Scaling]
+    TG --> ECS[ECS service<br/>Uptime Kuma task]
+    ECS --> EC2[EC2 capacity<br/>Auto Scaling + capacity provider]
     EC2 --> Logs[CloudWatch Logs]
-    EC2 --> SSM[Systems Manager backup jobs]
-    SSM --> Backup[(S3 application backups)]
-    Backup -. verified archive on replacement .-> EC2
-
-    Alarms[CloudWatch alarms] --> SNS[Optional SNS email notifications]
-
+    EC2 --> SSM[Systems Manager]
+    SSM --> Backup[(S3 application backups<br/>archive + SHA-256)]
+    Backup -. restore on replacement .-> EC2
+    Alarms[CloudWatch alarms] --> SNS[SNS email notifications]
     GitHub[GitHub Actions] --> OIDC[AWS OIDC roles]
-    OIDC --> TF[Terraform-managed infrastructure]
-    TF --> State[(S3 Terraform state)]
-~~~
+    OIDC --> TF[Terraform]
+    TF --> State[(S3 remote state)]
+```
 
-## What I built and tested
+## What I verified
 
-### ECS on EC2
+### Recovery after instance replacement
 
-I chose ECS on EC2 rather than Fargate to learn both the orchestration layer and the capacity underneath it. Terraform provisions the network, load balancer, ECS cluster and service, EC2 launch template, Auto Scaling Group, capacity provider, IAM roles and security groups.
-
-The service reached steady state during testing and the load balancer target became healthy. The EC2 instances were administered through Systems Manager; no inbound SSH rule was required.
-
-### Backup and recovery
-
-The recovery path was tested end to end:
-
-1. A manual Systems Manager backup job created a transactionally consistent SQLite snapshot and uploaded a timestamped archive plus SHA-256 checksum sidecar to S3.
+1. A Systems Manager backup job created a SQLite-consistent snapshot and uploaded a timestamped archive and SHA-256 sidecar to S3.
 2. Auto Scaling replaced the EC2 instance.
-3. The replacement verified the archive checksum and ran SQLite `PRAGMA integrity_check` before starting the ECS agent.
+3. Startup validated the archive checksum and SQLite database integrity before starting the ECS agent.
 4. Uptime Kuma returned with its previous monitor configuration and history, and the application target became healthy.
 
-This demonstrates that the saved application data could be restored after instance replacement. **Exact RPO and RTO measurements were not captured**, so the project does not claim a measured recovery objective.
+The recorded drill bounds dashboard recovery to about 13 minutes 11 seconds after replacement launch. The initial drill did not capture a precise termination-request-to-healthy-target duration, exact RPO/RTO, the S3 object version ID, the digest string, or direct SQLite integrity output. I therefore describe recovery as demonstrated, not as a measured service-level objective.
 
-### GitHub Actions and OIDC
+[Read the restore-drill record](docs/restore-drill.md).
 
-The repository includes three workflows:
+### Deployment and infrastructure checks
 
-- **Terraform validation** — formatting and configuration validation for the application, bootstrap and backup-infrastructure roots.
-- **Gitleaks** — secret scanning on pushes and pull requests, with scheduled and manual runs for broader history scanning.
-- **Terraform deployment** — manual plan/apply workflow using OIDC, short-lived AWS credentials, an encrypted short-retention plan artifact, explicit deploy confirmation and a protected GitHub Environment.
+- [Application deployment — workflow run #20](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39461906090)
+- [SNS/email alarm wiring — workflow run #21](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39465845112)
+- [Backup-freshness metric fix — workflow run #22](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39473186374)
+- [Terraform formatting and validation](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39472903358)
+- [Gitleaks secret-scanning workflow](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/workflows/gitleaks.yml)
 
-The validation workflow has passed, and the full-history Gitleaks scan has been reviewed successfully. The deployment workflow was exercised during the project test. No static AWS access keys are embedded in the workflows.
+I also operationally verified the ECS dynamic host-port path on 20 October 2026: container port 3001 mapped to host port 32768, and the security-group rules allowed TCP 32768–65535. The observed kernel ephemeral range was 32768–60999, within the permitted range.
 
-## Design decisions
+I confirmed that S3 backup tests and alarm/recovery email tests were working, and that the backup-freshness metric fix was deployed. These checks were confirmed during project closeout; they were not independently re-run as part of this README update.
 
-- **ECS on EC2 instead of Fargate:** this project was built to learn both container orchestration and the EC2 capacity layer. The trade-off is more responsibility for instance capacity, the ECS agent, launch templates and Auto Scaling.
-- **SQLite with consistent S3 backups instead of a shared filesystem:** a SQLite-consistent snapshot, checksum sidecar and startup integrity check made recovery testable without introducing EFS or an external database. The design uses a single active application task and restore-on-boot; it is not a multi-writer database design.
-- **One active ECS task:** this avoids multiple tasks maintaining independent local SQLite copies. At scale, I would first establish a persistence architecture supported by the application, then test multi-task behavior and availability zones rather than simply increasing desired count.
-- **TLS termination at the ALB:** Terraform looks up an already-requested ACM certificate for `uptime.pedromartins9.me`, serves HTTPS on port 443, and redirects HTTP on port 80 to HTTPS with `HTTP_301`. The certificate must be in `eu-west-1`, have status `ISSUED`, and cover the configured hostname. The default certificate lookup matches ACM's primary domain name exactly. If the issued certificate uses a different primary domain (for example, the apex or a wildcard) but its certificate names still cover `uptime.pedromartins9.me`, set the GitHub Actions variable `ACM_CERTIFICATE_LOOKUP_DOMAIN` to that exact primary domain; locally use `TF_VAR_acm_certificate_lookup_domain`. The ALB is intended to be internet-accessible over IPv4 TCP 80/443; ECS instance ingress remains limited to dynamic host-port traffic from the ALB security group. DNS records remain managed outside this Terraform root. Terraform deployment run #20 completed successfully on 20 October 2026. The operator reports that the hostname is routed to the application and HTTP redirects to HTTPS. This confirms the initial deployment and reported redirect, not end-to-end alarm delivery, backup success, or the new instance's ephemeral-port configuration.
-- **Terraform state locking:** the remote S3 backends use native S3 lock files (`use_lockfile = true`) and per-root state keys; the state bucket uses versioning. The bootstrap root still uses local state unless deliberately migrated.
+## Key design decisions
 
-## Backup schedule and recovery objective
+- **ECS on EC2, not Fargate:** I wanted to learn capacity management alongside container orchestration. The trade-off is additional responsibility for the EC2 launch template, ECS agent, capacity provider and Auto Scaling.
+- **One active task with local SQLite data:** I avoided multiple tasks maintaining independent local databases. A production-scale design would need a deliberately chosen persistence and availability model rather than simply increasing the desired count.
+- **S3 recovery with integrity gates:** backups are useful only if they can be restored. Startup verifies the archive checksum and database integrity before allowing ECS to start.
+- **Systems Manager instead of SSH:** instance administration and backup operations use AWS Systems Manager, without an inbound SSH rule.
+- **OIDC instead of long-lived AWS keys:** GitHub Actions assumes AWS roles using short-lived credentials. The deployment workflow separates planning from a gated apply.
 
-The SSM backup is scheduled daily at **02:05 UTC**. A separate hourly check publishes whether the most recent archive is no more than 26 hours old. The nominal backup interval is about 24 hours, but this is not a guaranteed RPO: the actual recoverable point depends on the age of the latest successful, integrity-checked backup when an incident occurs. Failed or skipped jobs can make the data-loss window longer.
+## Security and operating model
 
-The previous restore drill demonstrated that the app's existing data returned after EC2 replacement. Available timestamps bounded dashboard recovery to about **13 minutes 11 seconds after replacement launch**, but did not record termination-request-to-healthy-target time exactly. Treat that as an observed upper bound from screenshots, not a measured RTO. A future drill should record the termination request and first healthy target timestamps directly.
+The ALB is designed to accept public IPv4 HTTP/HTTPS traffic; HTTP redirects to HTTPS using an ACM certificate in `eu-west-1`. ECS host ports are restricted to traffic from the ALB security group. Since the Uptime Kuma login page is internet-accessible while the demo is running, I use a strong, unique admin password and recommend enabling Uptime Kuma two-factor authentication.
 
-## Evidence and CI
+The app was intended to be time-boxed to control cost. The hostname may be offline when the demo is not running; contact me to arrange a live walkthrough. The Terraform state and application-backup S3 buckets are managed separately from the application stack and can continue to incur storage charges.
 
-- [Terraform formatting and validation — successful run](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39039712681)
-- [Gitleaks secret scanning — successful run](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39040173879)
+I have not attached an independently audited Cost Explorer export, so I am **not publishing a project cost total**. The earlier approximately €0.20 figure was an estimate of project runs, not a verified billing total. A configured budget threshold is a notification setting, not proof that that amount was spent.
 
-The repository includes the deployment workflows, restore-drill record, and [final evidence pack](docs/final-evidence.md). The operator estimates cumulative charges across project runs at approximately **€0.20**; this is an estimate, not an independently audited Cost Explorer total. Budget alerts are configured. A €10 budget threshold is a notification setting, not evidence that €10 was spent. No short demo video is available.
+## Repository structure
 
-## Security and known limitations
+```text
+.github/workflows/
+  gitleaks.yml
+  terraform-deploy.yml
+  terraform-validate.yml
+docs/
+  evidence-capture.md
+  final-evidence.md
+  oidc-setup.md
+  portfolio-readiness.md
+  restore-drill.md
+terraform/
+  bootstrap-state/  # One-time state-bucket bootstrap
+  backup-infra/     # Persistent application-backup storage
+  cost-controls/    # Optional persistent AWS budget alerts
+  *.tf              # Main application infrastructure
+```
 
-- **Public HTTPS exposure:** deployment run #20 created the ALB HTTPS listener and HTTP-to-HTTPS redirect, and the operator reports that `uptime.pedromartins9.me` is live with HTTP redirecting to HTTPS. The certificate is looked up in `eu-west-1`; the selected certificate must cover the service hostname. If the certificate's primary domain differs, `ACM_CERTIFICATE_LOOKUP_DOMAIN` must match that exact primary domain, while the certificate's names/SANs must still cover `uptime.pedromartins9.me`. A certificate for apex `pedromartins9.me` alone does not cover the subdomain. Because the login page is internet-accessible, use a strong, unique admin password and keep ECS dynamic host ports private behind the ALB security group. Verify current target health before making a fresh availability claim. The ALB-to-ECS dynamic host-port path was operationally verified on 20 October 2026; revisit the port configuration only if connectivity issues appear or networking changes.
-- The SNS topic and email subscription are deployed and confirmed. A controlled CPU-alarm state test generated an email, verifying CloudWatch-to-SNS delivery. The operator confirms that alert and recovery email tests are complete and S3 backup tests are working. The backup-freshness metric-dimension fix has been deployed; datapoints are visible and the freshness alarm cleared. No further live test is needed solely for closeout. Use existing workflow/restore records and the [final evidence pack](docs/final-evidence.md) for sanitized portfolio proof. The ALB-to-ECS dynamic host-port path was operationally verified on 20 October 2026.
-- A separate `terraform/cost-controls/` root defines an account-wide monthly USD budget with actual-spend notifications at 50%, 80% and 100%, excluding credit offsets. It is not enabled until `BUDGET_ALERT_EMAIL` is configured, and email delivery has not yet been tested.
-- Exact S3 object-version/checksum evidence and precise RPO/RTO measurements were not captured during the recovery drill.
-- Persistent S3 state and backup storage remain after application teardown. They are intentionally managed separately from the application stack and may continue to incur storage charges.
+## Run it in your own AWS account
 
-## Repository layout
+This is a learning project, not a one-click deployment. Start with the [OIDC setup guide](docs/oidc-setup.md), review all Terraform configuration, and carefully inspect the full plan before applying. The backend uses partial configuration; configure the existing remote-state bucket via the `TFSTATE_BUCKET` secret for GitHub Actions or `-backend-config` locally. Set the expected AWS account ID through the documented variable and do not commit account-specific values.
 
-~~~text
-.
-├── LICENSE
-├── .github/workflows/
-│   ├── gitleaks.yml
-│   ├── terraform-deploy.yml
-│   └── terraform-validate.yml
-├── docs/
-│   ├── oidc-setup.md
-│   ├── portfolio-readiness.md
-│   └── restore-drill.md
-└── terraform/
-    ├── bootstrap-state/   # One-time state-bucket bootstrap
-    ├── backup-infra/      # Persistent backup bucket, separate root
-    ├── certificate.tf     # Look up the issued ACM certificate for the domain
-    ├── backup.tf          # Scheduled backup and freshness checks
-    ├── outputs.tf         # ALB DNS name and zone ID for external DNS
-    ├── capacity.tf        # Auto Scaling and ECS capacity provider
-    ├── compute.tf         # Launch template and restore-on-boot
-    ├── ecs.tf
-    ├── iam.tf
-    ├── loadbalancer.tf
-    ├── monitoring.tf
-    ├── network.tf
-    ├── providers.tf
-    ├── security.tf
-    ├── service.tf
-    ├── task.tf
-    ├── variables.tf
-    └── versions.tf
-~~~
+The default hostname is `uptime.pedromartins9.me`; DNS is managed outside this Terraform root. The ACM certificate must already be issued in `eu-west-1` and cover the service hostname. The certificate lookup variable and apex/wildcard cases are documented in the deployment configuration and setup notes rather than in this overview.
 
-## Trying it yourself
-
-This repository is a learning project, not a one-click deployment. Before deploying it in your own AWS account:
-
-1. Install Terraform and AWS CLI, and configure an AWS identity with the permissions required by the chosen workflow.
-2. Review the [OIDC setup guide](docs/oidc-setup.md) if using GitHub Actions. Replace every placeholder and configure the repository variables/secrets described there.
-3. In GitHub repository **Settings → Secrets and variables → Actions → Secrets**, set `TFSTATE_BUCKET` to the name of the existing Terraform state S3 bucket. The backend blocks intentionally leave `bucket = ""`; the deployment workflow passes the secret to `terraform init` and fails early if it is missing. For local runs, set `TFSTATE_BUCKET` in your shell and pass it through `-backend-config="bucket=$TFSTATE_BUCKET"` rather than editing or committing the bucket name. Also set `TF_VAR_aws_account_id` to the expected 12-digit AWS account ID; do not commit account-specific values.
-4. Bootstrap or reuse the existing Terraform state bucket; configure and apply `terraform/cost-controls/` if you want persistent account-wide budget alerts; then apply `terraform/backup-infra/`, and finally plan the main application root in `terraform/`.
-5. Review the **entire** Terraform plan before applying. The default hostname is `uptime.pedromartins9.me` (override with `TF_VAR_domain_name` or the GitHub Actions repository variable `UPTIME_KUMA_DOMAIN_NAME`). The ACM certificate must be `ISSUED` in `eu-west-1` and cover the hostname. By default its primary domain must be `uptime.pedromartins9.me`; use `ACM_CERTIFICATE_LOOKUP_DOMAIN` when the valid certificate has a different primary domain (such as the apex or a wildcard). The ALB is public on IPv4 ports 80/443; use strong Uptime Kuma credentials and keep ECS host ports accessible only from the ALB security group.
-
-For recovery-test instructions, see [the restore drill](docs/restore-drill.md). For the remaining hardening and portfolio steps, see [portfolio readiness](docs/portfolio-readiness.md).
-
-### Teardown and costs
-
-The current application resources are deployed according to the latest handoff; verify live service and target health before making a current availability claim. When the agreed test window ends, review the destroy plan and destroy only the main application root if you intend to stop the stack. **Do not destroy the state-storage, backup-infrastructure or cost-controls roots as part of routine application teardown.** Check EC2, load balancing, EBS, CloudWatch and billing after teardown. The retained S3 buckets are separate and can continue to incur storage charges. The project is considered complete as a portfolio project when the final backup-pair and recovery-email checks are evidenced, documentation is consistent, and remaining cost controls are either enabled or explicitly deferred.
-
-## Technologies
-
-AWS ECS on EC2, EC2 Auto Scaling, VPC, Application Load Balancer, IAM, Systems Manager, CloudWatch, SNS, S3, SQLite, Terraform, GitHub Actions, OIDC and Gitleaks.
-
-## License
-
-This project is licensed under the [Apache License 2.0](LICENSE). The license applies to this project's original work; third-party tools and dependencies remain subject to their own licenses.
+When finished testing, review and destroy only the main application Terraform root. **Do not destroy the separate state, backup-infrastructure or cost-controls roots as part of routine application teardown.** Verify the resulting resource cleanup and review remaining billable storage.
 
 ## Further reading
 
 - [OIDC setup and GitHub Actions permissions](docs/oidc-setup.md)
-- [Backup and restore drill evidence](docs/restore-drill.md)
-- [Evidence capture runbook](docs/evidence-capture.md)
-- [Portfolio readiness and remaining improvements](docs/portfolio-readiness.md)
-- [Final portfolio evidence pack](docs/final-evidence.md)
+- [Backup and restore drill](docs/restore-drill.md)
+- [Final evidence pack](docs/final-evidence.md)
+- [Evidence capture guide](docs/evidence-capture.md)
+- [Portfolio readiness and closeout notes](docs/portfolio-readiness.md)
+
+## Technologies
+
+AWS ECS on EC2, EC2 Auto Scaling, VPC, Application Load Balancer, ACM, IAM, Systems Manager, CloudWatch, SNS, S3, SQLite, Terraform, GitHub Actions, OIDC and Gitleaks.
+
+## License
+
+This project is licensed under the [Apache License 2.0](LICENSE). The license applies to this project's original work; third-party tools and dependencies remain subject to their own licenses.
