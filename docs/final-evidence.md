@@ -19,6 +19,10 @@ The operator confirms that S3 backups and alarm email notifications have already
 
 The workflow and restore-drill links are durable public evidence. Do not paste account-specific Terraform output, state contents, ARNs, instance IDs or private monitor URLs into public documentation.
 
+## 2. Demo video and screenshot pack
+
+A 2–3 minute screen recording is the highest-impact remaining presentation improvement. Show the dashboard and healthy ALB target, explain the infrastructure and OIDC plan/apply flow briefly, then use the existing restore-drill evidence to narrate replacement and recovery; finish with a sanitized alarm email. Do not perform another destructive recovery drill or trigger successful alarm tests solely to film the video. If the live stack is no longer available, make a narrated walkthrough using existing sanitized screenshots and logs instead.
+
 ## 2. Small screenshot pack
 
 Capture these only if the screenshots are useful for a portfolio README, CV, or interview. Use the existing deployment; do not run another Terraform apply merely to produce them.
