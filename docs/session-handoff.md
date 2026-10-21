@@ -85,6 +85,20 @@ Latest publication-readiness update: [commit `bd505d043bcaebfb8aaeb802468ceb93db
 
 **Security and history status (19 October 2026):** the current tracked tree uses placeholders for account-specific values. I inspected the diffs of all 138 commits reachable from `main` through GitHub's API for concrete 12-digit AWS account IDs and literal state/backup bucket names; none were found. GitHub's refs endpoint exposed only `refs/heads/main`, with no tag refs. The operator confirmed that `gitleaks detect` returned no findings. No further force-push/history rewrite was performed because this reachable-history audit found no targeted literals to remove. This does not erase copies in local clones or guarantee immediate removal of GitHub's unreachable-object caches. Keep old local clones private and do not restore removed identifiers. Do not leave the old 'history cleanup is a publication blocker' wording in future docs.
 
+## 5. Completion definition — final closeout
+
+The project is already published; do not use "finished" to imply a permanently running production service. Close the remaining portfolio milestone after these steps:
+
+1. Read-only inspect the newest timestamped S3 archive and its matching SHA-256 sidecar. Record sanitized output showing the pair matches. No extra restore drill is required to support the existing recovery claim unless you specifically want tighter recovery evidence.
+2. In the isolated test window, verify the recovery (`OK`) email from a safe alarm transition and return the alarm to normal. Record the result.
+3. Capture a small sanitized evidence set: successful deployment run, HTTPS/redirect and healthy target, prior restore success, latest archive/checksum pair, and alarm/recovery email.
+4. Decide the cost-controls root explicitly: apply the account-wide budget after reviewing scope and recipient, or document that budget alerts are deferred. Review retained S3 bucket usage and current spend without publishing bucket names/account IDs.
+5. Complete portfolio polish: verify public rendering and relative links while signed out, set the GitHub repository description, and add topics.
+6. Make README, readiness checklist, and handoff wording consistent. Run validation and Gitleaks after these documentation updates.
+7. After the agreed test window, use the documented controlled teardown, audit remaining billable resources, and retain state/backup buckets deliberately. This is a cost-control action, not a prerequisite to claim that the portfolio project was built and tested.
+
+**Definition of done:** public documentation is internally consistent; current security/validation checks pass; recovery and backup claims have the evidence actually captured; notification test results are accurately scoped; costs and persistent storage are accounted for. Exact RPO/RTO or project-only cost claims are optional and must not be invented.
+
 ## 5. Prioritized next-session plan
 
 The repository is public. Do not repeat completed history or teardown checks unless new commits, alerts, or evidence justify doing so.
