@@ -107,7 +107,7 @@ Do not invent a cost figure from instance prices or a short test duration. Recor
 | Budget alerts | Operator-confirmed configured | A budget threshold (for example €10) is not the same as actual spend; record whether a notification is actual- or forecast-based |
 | Reported test/deployment cost | Approx. €0.20, operator-reported | No independent Cost Explorer export was attached. For a public numeric claim, preserve the range, currency, cost metric, project/account attribution, and credits/refunds treatment |
 | Terraform validation | Pass | [Latest validation on the last Terraform-code commit](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39472903358); later commits are documentation-only |
-| Gitleaks | Pass | [Current-head Gitleaks run](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/runs/39597613731) |
+| Gitleaks | Pass, verify latest run after documentation commit | [Gitleaks workflow](https://github.com/Pedro-Martins9/uptimekuma-aws-deployment/actions/workflows/gitleaks.yml) |
 | Teardown | Not performed after latest redeployment | Keep or remove the app intentionally. If removing it, preserve the remote state and backup roots unless you have deliberately decided they are no longer needed |
 
 The table above is the honest closeout record; it separates operator-confirmed live tests from evidence independently retrievable from GitHub. Exact recovery timing and exact total cost are optional deeper measurements, not blockers for labelling the portfolio project complete.
