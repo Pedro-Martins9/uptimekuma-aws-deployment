@@ -15,11 +15,14 @@ variable "alert_email" {
   nullable    = true
 }
 
-variable "acm_certificate_lookup_domain" {
-  description = "Optional exact ACM primary domain to search for. The selected ISSUED certificate must also cover domain_name; leave null to search using domain_name itself."
+variable "acm_certificate_arn" {
+  description = "Full ARN of an already-issued ACM certificate in eu-west-1. Pass it directly so planning and destroying do not depend on a domain-based ACM data-source lookup."
   type        = string
-  default     = null
-  nullable    = true
+
+  validation {
+    condition     = can(regex(format("^arn:aws:acm:eu-west-1:%s:certificate/.+$", var.aws_account_id), var.acm_certificate_arn))
+    error_message = "acm_certificate_arn must be an ACM certificate ARN in eu-west-1 belonging to aws_account_id."
+  }
 }
 
 variable "domain_name" {

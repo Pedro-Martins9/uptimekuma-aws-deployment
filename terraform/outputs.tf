@@ -14,8 +14,8 @@ output "alb_zone_id" {
 }
 
 output "acm_certificate_arn" {
-  description = "Issued ACM certificate selected for the configured Uptime Kuma hostname."
-  value       = data.aws_acm_certificate.uptimekuma.arn
+  description = "ACM certificate ARN supplied for the configured Uptime Kuma hostname."
+  value       = var.acm_certificate_arn
 }
 
 output "uptimekuma_url" {

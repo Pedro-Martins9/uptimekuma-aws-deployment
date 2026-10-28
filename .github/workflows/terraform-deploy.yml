@@ -45,7 +45,7 @@ jobs:
       TF_ROOT: ${{ inputs.target == 'backup-infra' && 'terraform/backup-infra' || inputs.target == 'cost-controls' && 'terraform/cost-controls' || 'terraform' }}
       TFSTATE_BUCKET: ${{ secrets.TFSTATE_BUCKET }}
       TF_VAR_domain_name: ${{ vars.UPTIME_KUMA_DOMAIN_NAME || 'uptime.pedromartins9.me' }}
-      TF_VAR_acm_certificate_lookup_domain: ${{ vars.ACM_CERTIFICATE_LOOKUP_DOMAIN || vars.UPTIME_KUMA_DOMAIN_NAME || 'uptime.pedromartins9.me' }}
+      TF_VAR_acm_certificate_arn: ${{ inputs.target == 'application' && vars.ACM_CERTIFICATE_ARN || '' }}
     steps:
       - name: Checkout the selected main-branch commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -67,6 +67,19 @@ jobs:
           set -euo pipefail
           if [[ ! "${AWS_ACCOUNT_ID:-}" =~ ^[0-9]{12}$ ]]; then
             echo "::error::Set the repository Actions variable AWS_ACCOUNT_ID to the 12-digit AWS account ID before running Terraform deployment."
+            exit 1
+          fi
+
+      - name: Validate ACM certificate ARN for application target
+        if: ${{ inputs.target == 'application' }}
+        shell: bash
+        env:
+          AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+          ACM_CERTIFICATE_ARN: ${{ vars.ACM_CERTIFICATE_ARN }}
+        run: |
+          set -euo pipefail
+          if [[ ! "${ACM_CERTIFICATE_ARN:-}" =~ ^arn:aws:acm:eu-west-1:${AWS_ACCOUNT_ID}:certificate/.+ ]]; then
+            echo "::error::Set the repository Actions variable ACM_CERTIFICATE_ARN to an issued ACM certificate ARN in eu-west-1 for AWS_ACCOUNT_ID."
             exit 1
           fi
 
@@ -159,7 +172,7 @@ jobs:
       TF_ROOT: ${{ inputs.target == 'backup-infra' && 'terraform/backup-infra' || inputs.target == 'cost-controls' && 'terraform/cost-controls' || 'terraform' }}
       TFSTATE_BUCKET: ${{ secrets.TFSTATE_BUCKET }}
       TF_VAR_domain_name: ${{ vars.UPTIME_KUMA_DOMAIN_NAME || 'uptime.pedromartins9.me' }}
-      TF_VAR_acm_certificate_lookup_domain: ${{ vars.ACM_CERTIFICATE_LOOKUP_DOMAIN || vars.UPTIME_KUMA_DOMAIN_NAME || 'uptime.pedromartins9.me' }}
+      TF_VAR_acm_certificate_arn: ${{ inputs.target == 'application' && vars.ACM_CERTIFICATE_ARN || '' }}
       TFPLAN_ENCRYPTION_KEY: ${{ secrets.TFPLAN_ENCRYPTION_KEY }}
     steps:
       - name: Checkout the same commit used for planning
@@ -204,6 +217,19 @@ jobs:
           set -euo pipefail
           if [[ ! "${AWS_ACCOUNT_ID:-}" =~ ^[0-9]{12}$ ]]; then
             echo "::error::Set the repository Actions variable AWS_ACCOUNT_ID to the 12-digit AWS account ID before running Terraform deployment."
+            exit 1
+          fi
+
+      - name: Revalidate ACM certificate ARN for application target
+        if: ${{ inputs.target == 'application' }}
+        shell: bash
+        env:
+          AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+          ACM_CERTIFICATE_ARN: ${{ vars.ACM_CERTIFICATE_ARN }}
+        run: |
+          set -euo pipefail
+          if [[ ! "${ACM_CERTIFICATE_ARN:-}" =~ ^arn:aws:acm:eu-west-1:${AWS_ACCOUNT_ID}:certificate/.+ ]]; then
+            echo "::error::Set the repository Actions variable ACM_CERTIFICATE_ARN to an issued ACM certificate ARN in eu-west-1 for AWS_ACCOUNT_ID."
             exit 1
           fi
 

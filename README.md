@@ -103,20 +103,24 @@ This project uses separate Terraform roots so persistent state and backups are n
 - A DNS hostname you control and an ACM certificate in `eu-west-1` with status `ISSUED` covering that hostname. DNS records and certificate validation are managed outside Terraform.
 - A state bucket named `uptimekuma-tfstate-<AWS_ACCOUNT_ID>` (or the exact existing bucket configured for your deployment), plus the application-backup bucket created by the `backup-infra` root.
 
-Check the AWS identity before running Terraform. Do not continue if it is the wrong account.
+Check the AWS identity before running Terraform. Do not continue if it is the wrong account. After copying the example file, edit `terraform/terraform.tfvars` and replace every placeholder with your actual account ID, hostname, and issued ACM certificate ARN. That file is ignored by Git and keeps the same inputs available for later plan, apply, and destroy commands.
 
 ### Windows PowerShell
 
 ```powershell
-$env:TF_VAR_aws_account_id = (aws sts get-caller-identity --query Account --output text).Trim()
-$stateBucket = "uptimekuma-tfstate-$env:TF_VAR_aws_account_id"
+$accountId = (aws sts get-caller-identity --query Account --output text).Trim()
+$env:TF_VAR_aws_account_id = $accountId
+$stateBucket = "uptimekuma-tfstate-$accountId"
+Copy-Item terraform/terraform.tfvars.example terraform/terraform.tfvars
 ```
 
 ### Bash (Linux, macOS or Git Bash)
 
 ```bash
-export TF_VAR_aws_account_id="$(aws sts get-caller-identity --query Account --output text)"
-STATE_BUCKET="uptimekuma-tfstate-${TF_VAR_aws_account_id}"
+ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
+export TF_VAR_aws_account_id="$ACCOUNT_ID"
+STATE_BUCKET="uptimekuma-tfstate-${ACCOUNT_ID}"
+cp terraform/terraform.tfvars.example terraform/terraform.tfvars
 ```
 
 ### 1. Bootstrap the state bucket (new accounts only)
@@ -141,7 +145,7 @@ The default hostname is `uptime.pedromartins9.me`. Override it if you are deploy
 $env:TF_VAR_domain_name = "uptime.example.com"
 ```
 
-Only set `TF_VAR_acm_certificate_lookup_domain` if the certificate's primary domain differs from the hostname being served (for example, when looking up a wildcard certificate). The selected certificate must still cover `TF_VAR_domain_name`.
+Set `acm_certificate_arn` in `terraform/terraform.tfvars` to the full ARN of the already-issued ACM certificate in `eu-west-1`. The certificate must be in the configured AWS account and cover the hostname in `domain_name`. The application root now uses this ARN directly rather than querying ACM by domain; this avoids a data-source lookup failure blocking a destroy when the certificate lookup cannot find a result.
 
 Complete ACM DNS validation and confirm the certificate is `ISSUED` in `eu-west-1` before continuing. Terraform does not create the DNS record or certificate in this project.
 

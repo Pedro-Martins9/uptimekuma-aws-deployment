@@ -1,0 +1,8 @@
+# Copy this file to terraform/terraform.tfvars and replace every placeholder.
+# terraform.tfvars is ignored by Git; do not commit account-specific values.
+aws_account_id       = "123456789012"
+domain_name          = "uptime.example.com"
+acm_certificate_arn  = "arn:aws:acm:eu-west-1:123456789012:certificate/REPLACE_WITH_ISSUED_CERTIFICATE_ID"
+
+# Optional. Uncomment to enable email alerts and confirm the SNS subscription.
+# alert_email = "you@example.com"
