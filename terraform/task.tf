@@ -53,6 +53,11 @@ resource "aws_ecs_task_definition" "uptimekuma" {
     host_path = "/var/lib/uptimekuma"
   }
 
+  # The task definition references the execution role ARN, but not its
+  # attached permissions. Ensure ECR pulls and CloudWatch logging permissions
+  # are attached before the service can start tasks from this definition.
+  depends_on = [aws_iam_role_policy_attachment.ecs_task_execution]
+
   tags = {
     Name = "uptimekuma-task"
   }

@@ -139,13 +139,11 @@ The bucket has `prevent_destroy` enabled and is intended to persist.
 
 ### 2. Configure the hostname and certificate
 
-The default hostname is `uptime.pedromartins9.me`. Override it if you are deploying under a different hostname:
+The default hostname is `uptime.pedromartins9.me`. Set `domain_name` in `terraform/terraform.tfvars` to the hostname you intend to serve.
 
-```powershell
-$env:TF_VAR_domain_name = "uptime.example.com"
-```
+Set `acm_certificate_arn` in the same file to the full ARN of the already-issued ACM certificate in `eu-west-1`. The certificate must be in the configured AWS account and cover the hostname in `domain_name`. The application root now uses this ARN directly rather than querying ACM by domain; this avoids a data-source lookup failure blocking a destroy when the certificate lookup cannot find a result.
 
-Set `acm_certificate_arn` in `terraform/terraform.tfvars` to the full ARN of the already-issued ACM certificate in `eu-west-1`. The certificate must be in the configured AWS account and cover the hostname in `domain_name`. The application root now uses this ARN directly rather than querying ACM by domain; this avoids a data-source lookup failure blocking a destroy when the certificate lookup cannot find a result.
+Keep these values in `terraform/terraform.tfvars` instead of setting conflicting `TF_VAR_domain_name` environment variables. Terraform variable files take precedence over `TF_VAR_*` environment variables.
 
 Complete ACM DNS validation and confirm the certificate is `ISSUED` in `eu-west-1` before continuing. Terraform does not create the DNS record or certificate in this project.
 

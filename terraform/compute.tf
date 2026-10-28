@@ -87,9 +87,15 @@ resource "aws_launch_template" "ecs" {
     }
   }
 
-  # Ensure the instance role has backup/restore permissions before ASG
-  # launches an instance whose user data accesses the S3 backup bucket.
-  depends_on = [aws_iam_role_policy.ecs_instance_backup]
+  # The launch template itself references the instance profile, but that
+  # reference does not imply that its role policies have been attached. These
+  # permissions must exist before an ASG-launched instance runs user data or
+  # starts the ECS/SSM agents.
+  depends_on = [
+    aws_iam_role_policy.ecs_instance_backup,
+    aws_iam_role_policy_attachment.ecs_instance,
+    aws_iam_role_policy_attachment.ecs_instance_ssm,
+  ]
 
   lifecycle {
     create_before_destroy = true

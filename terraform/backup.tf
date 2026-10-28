@@ -51,6 +51,15 @@ resource "aws_iam_role_policy" "ecs_instance_backup" {
 # SSM State Manager takes a transactionally consistent SQLite snapshot, then
 # packages the rest of the app data directory alongside it.
 resource "aws_ssm_association" "daily_backup" {
+  # The association invokes AWS CLI commands on matching instances. Wait for
+  # the instance role's S3/CloudWatch permissions and SSM managed-instance policy
+  # to exist before targeting those instances; reverse order removes the
+  # association before its required permissions during teardown.
+  depends_on = [
+    aws_iam_role_policy.ecs_instance_backup,
+    aws_iam_role_policy_attachment.ecs_instance_ssm,
+  ]
+
   name                        = "AWS-RunShellScript"
   association_name            = "uptimekuma-daily-sqlite-backup"
   schedule_expression         = "cron(5 2 * * ? *)"
@@ -128,6 +137,15 @@ resource "aws_ssm_association" "daily_backup" {
 # data point every hour so CloudWatch can detect both stale data and a missing
 # freshness check, instead of treating a once-daily datapoint as a heartbeat.
 resource "aws_ssm_association" "backup_freshness" {
+  # The association invokes AWS CLI commands on matching instances. Wait for
+  # the instance role's S3/CloudWatch permissions and SSM managed-instance policy
+  # to exist before targeting those instances; reverse order removes the
+  # association before its required permissions during teardown.
+  depends_on = [
+    aws_iam_role_policy.ecs_instance_backup,
+    aws_iam_role_policy_attachment.ecs_instance_ssm,
+  ]
+
   name                        = "AWS-RunShellScript"
   association_name            = "uptimekuma-backup-freshness-check"
   schedule_expression         = "cron(0 0/1 * * ? *)"
