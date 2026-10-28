@@ -9,6 +9,8 @@ terraform {
     }
   }
 
+  # Intentional partial backend configuration. Supply the existing bucket
+  # with terraform init -backend-config="bucket=<state-bucket-name>".
   backend "s3" {
     bucket       = ""
     key          = "uptimekuma/terraform.tfstate"

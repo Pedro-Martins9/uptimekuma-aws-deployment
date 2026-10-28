@@ -1,5 +1,14 @@
 
 resource "aws_autoscaling_group" "ecs" {
+  # Subnet references do not imply that public routing must exist first.
+  # This hidden dependency also drains the ASG before Terraform removes the
+  # route/associations and internet gateway during destroy.
+  depends_on = [
+    aws_route.public_internet,
+    aws_route_table_association.public,
+    aws_route_table_association.public_secondary,
+  ]
+
   name                = "uptimekuma-ecs-asg"
   min_size            = 0
   desired_capacity    = 0

@@ -22,8 +22,13 @@ resource "aws_ecs_service" "uptimekuma" {
     container_port   = 3001
   }
 
+  # These are operational dependencies not fully expressed by the
+  # service's arguments. Destroy the service before either listener and before
+  # detaching/deleting the cluster's capacity-provider association.
   depends_on = [
-    aws_lb_listener.http
+    aws_lb_listener.http,
+    aws_lb_listener.https,
+    aws_ecs_cluster_capacity_providers.main,
   ]
 
   tags = {

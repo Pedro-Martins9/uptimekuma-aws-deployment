@@ -12,6 +12,15 @@ resource "aws_lb" "main" {
     aws_subnet.public_secondary.id
   ]
 
+  # ALB traffic depends on usable public-subnet routing. Keep the ALB's
+  # destroy action ahead of route/association removal and internet-gateway
+  # teardown; subnet references alone do not express this relationship.
+  depends_on = [
+    aws_route.public_internet,
+    aws_route_table_association.public,
+    aws_route_table_association.public_secondary,
+  ]
+
   tags = {
     Name = "uptimekuma-alb"
   }

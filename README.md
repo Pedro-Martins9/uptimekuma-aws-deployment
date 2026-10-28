@@ -92,13 +92,93 @@ terraform/
   *.tf              # Main application infrastructure
 ```
 
-## Run it in your own AWS account
+## Run it locally in your own AWS account
 
-This is a learning project, not a one-click deployment. Start with the [OIDC setup guide](docs/oidc-setup.md), review all Terraform configuration, and carefully inspect the full plan before applying. The backend uses partial configuration; configure the existing remote-state bucket via the `TFSTATE_BUCKET` secret for GitHub Actions or `-backend-config` locally. Set the expected AWS account ID through the documented variable and do not commit account-specific values.
+This project uses separate Terraform roots so persistent state and backups are not accidentally removed when the application is torn down. It is not a one-command deployment: AWS credentials, a remote-state bucket, an application-backup bucket, and an issued ACM certificate are prerequisites.
 
-The default hostname is `uptime.pedromartins9.me`; DNS is managed outside this Terraform root. The ACM certificate must already be issued in `eu-west-1` and cover the service hostname. The certificate lookup variable and apex/wildcard cases are documented in the deployment configuration and setup notes rather than in this overview.
+### Prerequisites
 
-When finished testing, review and destroy only the main application Terraform root. **Do not destroy the separate state, backup-infrastructure or cost-controls roots as part of routine application teardown.** Verify the resulting resource cleanup and review remaining billable storage.
+- Terraform `>= 1.12.0, < 2.0.0` (the CI workflow currently pins `1.16.5`).
+- AWS CLI with credentials for the intended account and permissions to manage the resources in this repository. All resources are configured for `eu-west-1`.
+- A DNS hostname you control and an ACM certificate in `eu-west-1` with status `ISSUED` that covers the hostname. DNS records and certificate validation are managed outside this Terraform root.
+- A state bucket named `uptimekuma-tfstate-<AWS_ACCOUNT_ID>`, and the application-backup bucket created by the `backup-infra` root.
+
+Check the AWS identity before doing anything:
+
+```bash
+aws sts get-caller-identity
+export TF_VAR_aws_account_id="$(aws sts get-caller-identity --query Account --output text)"
+```
+
+On PowerShell, set the variable with:
+
+```powershell
+$env:TF_VAR_aws_account_id = (aws sts get-caller-identity --query Account --output text).Trim()
+```
+
+If the state bucket already exists, use its exact name and skip the bootstrap apply below. Do not run the bootstrap root against an existing bucket with an empty local state: it would try to create resources that already exist.
+
+### 1. Bootstrap the state bucket (new accounts only)
+
+The bootstrap root uses local state because it creates the bucket that the other roots need. Run it once and preserve the local state file securely; it is ignored by Git.
+
+```bash
+terraform -chdir=terraform/bootstrap-state init
+terraform -chdir=terraform/bootstrap-state plan
+terraform -chdir=terraform/bootstrap-state apply
+```
+
+Review the plan before confirming the apply. The bucket has `prevent_destroy` enabled and is intended to persist.
+
+### 2. Configure the hostname and certificate
+
+The default hostname is `uptime.pedromartins9.me`. Override it for your deployment if necessary:
+
+```bash
+export TF_VAR_domain_name="uptime.example.com"
+```
+
+Set `TF_VAR_acm_certificate_lookup_domain` only if the certificate's primary domain differs from the hostname being served (for example, when looking up a wildcard certificate). The selected certificate must still cover `TF_VAR_domain_name`.
+
+Before continuing, complete ACM DNS validation and confirm that the certificate is `ISSUED` in `eu-west-1`. Terraform does not create the DNS record or certificate in this project.
+
+### 3. Create the persistent application-backup bucket
+
+Use the exact existing state-bucket name in the backend configuration. The example below assumes the bucket created by the bootstrap root.
+
+```bash
+STATE_BUCKET="uptimekuma-tfstate-${TF_VAR_aws_account_id}"
+terraform -chdir=terraform/backup-infra init -backend-config="bucket=${STATE_BUCKET}"
+terraform -chdir=terraform/backup-infra plan
+terraform -chdir=terraform/backup-infra apply
+```
+
+Do not skip this root for a fresh deployment: EC2 startup expects the backup bucket to exist, even when it contains no archives yet. The backup bucket is deliberately protected from accidental destruction.
+
+### 4. Plan and deploy the application
+
+```bash
+STATE_BUCKET="uptimekuma-tfstate-${TF_VAR_aws_account_id}"
+terraform -chdir=terraform init -backend-config="bucket=${STATE_BUCKET}"
+terraform -chdir=terraform plan
+terraform -chdir=terraform apply
+```
+
+Review the plan before confirming the apply. You can optionally set `TF_VAR_alert_email` to receive CloudWatch alarm notifications; confirm the SNS email subscription after deployment. The domain's DNS record must point to the ALB after deployment.
+
+For the optional account-wide budget, initialize and apply `terraform/cost-controls` as a separate root using the same backend bucket, and set `TF_VAR_budget_alert_email` and optionally `TF_VAR_monthly_budget_limit_usd`.
+
+### 5. Safely tear down the application
+
+Only destroy the main application root for routine teardown. Keep the state bucket, backup infrastructure and cost-controls root separate so recovery data and account-wide safeguards can remain.
+
+```bash
+terraform -chdir=terraform plan -destroy -out=destroy.tfplan
+terraform -chdir=terraform show destroy.tfplan
+terraform -chdir=terraform apply destroy.tfplan
+```
+
+Read the entire destroy plan before applying it. The plan file is ignored by Git. When the destroy completes, verify the remaining AWS resources and review possible charges from the persistent S3 buckets. Do not destroy `terraform/bootstrap-state` or `terraform/backup-infra` as part of routine application teardown.
 
 ## Further reading
 
