@@ -11,6 +11,8 @@ I built this project to practise the parts of cloud engineering that sit beyond 
   <img alt="Security" src="https://img.shields.io/badge/Security-Gitleaks%20%7C%20SSM-success">
 </p>
 
+> **Deployment status: test-only.** The application stack is currently torn down. I provision it temporarily when testing and tear it down afterwards, so the public endpoint is normally unavailable.
+
 > **Portfolio highlight — recovery was demonstrated.** I replaced the EC2 host and restored the existing Uptime Kuma monitor configuration and history from S3. The recorded drill showed the dashboard usable approximately **13 minutes 11 seconds after replacement launch**. This is an observed recovery interval, not a formally measured RTO..
 
 ## Project at a glance
@@ -58,7 +60,7 @@ The recovery path is designed to avoid blindly restoring an archive:
 4. SQLite integrity is checked before the restored data is made available to the ECS workload.
 5. Uptime Kuma returns with the previous monitor configuration and history.
 
-The 16 October 2026 drill recorded a healthy load-balancer target and a dashboard with existing data after EC2 replacement. Some low-level evidence (direct checksum output, SQLite command output, exact first-healthy timestamp and object version ID) was not captured, so I do not claim an exact RPO or RTO..
+I ran the recovery drill on 16 October 2026. After EC2 replacement, I confirmed that the load-balancer target became healthy and the dashboard returned with its existing monitor data. I did not capture direct checksum output, SQLite integrity output, the exact first-healthy timestamp or the S3 object version ID, so I do not claim an exact RPO or RTO..
 
 ### Deployment security
 
@@ -71,9 +73,9 @@ The 16 October 2026 drill recorded a healthy load-balancer target and a dashboar
 
 ### Operational checks
 
-The project includes CloudWatch logging and alarms, SNS email notifications, and a custom backup-freshness metric. The ECS dynamic host-port path was checked on 20 October 2026: container port 3001 mapped to host port 32768, while the host ephemeral range observed was 32768–60999 and the security-group rule permitted TCP 32768–65535.
+The project includes CloudWatch logging and alarms, SNS email notifications, and a custom backup-freshness metric. I checked the ECS dynamic host-port path on 20 October 2026: container port 3001 mapped to host port 32768, while the host ephemeral range observed was 32768–60999 and the security-group rule permitted TCP 32768–65535.
 
-The successful deployment, alert wiring, metric fix and Terraform validation runs are linked below. These are historical workflow records; they are not a claim that a fresh deployment or live endpoint check was run today.
+I have linked previous workflow runs below. They record the successful application deployment, alert wiring, backup-freshness metric fix and Terraform validation. These are historical records, not evidence that the stack is currently running or that I checked the live endpoint today.
 
 | Evidence | Record |
 | --- | --- |
@@ -193,9 +195,9 @@ Read the full destroy plan before applying it. Verify remaining AWS resources an
 
 ## Verification status and limitations
 
-The repository contains historical workflow evidence and operator-recorded operational tests. Runtime status was last reported on 20 October 2026; this review has not independently queried AWS, re-probed the public endpoint, run Terraform locally, or executed a fresh recovery drill. The live hostname may therefore be unavailable.
+I have included historical workflow evidence and results from the operational tests I performed. I have not run a fresh deployment, checked the live endpoint, run Terraform locally or repeated the recovery drill as part of this README update.
 
-The project is presented as a completed portfolio build, not as a continuously hosted production service. No verified total project cost is published because an independently auditable Cost Explorer export was not captured.
+This is a completed portfolio build, not a continuously hosted production service. I deploy the application stack temporarily for testing and tear it down afterwards.
 
 ## Technologies
 
