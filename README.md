@@ -193,6 +193,10 @@ terraform -chdir=terraform apply destroy.tfplan
 
 Read the full destroy plan before applying it. Verify remaining AWS resources and storage charges afterwards. Do not destroy `terraform/bootstrap-state` or `terraform/backup-infra` as part of routine application teardown.
 
+## Reviewer checklist
+
+See [reviewer-checklist.md](docs/reviewer-checklist.md) for a concise pass/follow-up list covering repository hygiene, CI, operational evidence and remaining external checks.
+
 ## Further documentation
 
 - [Recovery drill and evidence limitations](docs/restore-drill.md)
