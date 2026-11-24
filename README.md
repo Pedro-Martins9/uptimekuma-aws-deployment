@@ -11,7 +11,7 @@ I built this project to practise the parts of cloud engineering that sit beyond 
   <img alt="Security" src="https://img.shields.io/badge/Security-Gitleaks%20%7C%20SSM-success">
 </p>
 
-> **Portfolio highlight — recovery was demonstrated.** I replaced the EC2 host and restored the existing Uptime Kuma monitor configuration and history from S3. The recorded drill showed the dashboard usable approximately **13 minutes 11 seconds after replacement launch**. This is an observed recovery interval, not a formally measured RTO. The recorded test and its evidence limitations are documented in [the restore drill](docs/restore-drill.md).
+> **Portfolio highlight — recovery was demonstrated.** I replaced the EC2 host and restored the existing Uptime Kuma monitor configuration and history from S3. The recorded drill showed the dashboard usable approximately **13 minutes 11 seconds after replacement launch**. This is an observed recovery interval, not a formally measured RTO..
 
 ## Project at a glance
 
@@ -58,7 +58,7 @@ The recovery path is designed to avoid blindly restoring an archive:
 4. SQLite integrity is checked before the restored data is made available to the ECS workload.
 5. Uptime Kuma returns with the previous monitor configuration and history.
 
-The 16 October 2026 drill recorded a healthy load-balancer target and a dashboard with existing data after EC2 replacement. Some low-level evidence (direct checksum output, SQLite command output, exact first-healthy timestamp and object version ID) was not captured, so I do not claim an exact RPO or RTO. See [restore-drill.md](docs/restore-drill.md).
+The 16 October 2026 drill recorded a healthy load-balancer target and a dashboard with existing data after EC2 replacement. Some low-level evidence (direct checksum output, SQLite command output, exact first-healthy timestamp and object version ID) was not captured, so I do not claim an exact RPO or RTO..
 
 ### Deployment security
 
@@ -68,7 +68,6 @@ The 16 October 2026 drill recorded a healthy load-balancer target and a dashboar
 - The saved Terraform plan is encrypted before being transferred as a short-retention workflow artifact.
 - Instance administration uses Systems Manager; there is no public SSH ingress.
 
-See [OIDC setup](docs/oidc-setup.md) for the trust and workflow design.
 
 ### Operational checks
 
@@ -96,7 +95,6 @@ The successful deployment, alert wiring, metric fix and Terraform validation run
 
 ```text
 .github/workflows/       CI validation, deployment and secret scanning
-docs/                    Recovery evidence, OIDC design and operational handoff
 terraform/               Main application infrastructure
   bootstrap-state/       One-time remote-state bucket bootstrap
   backup-infra/          Persistent application-backup bucket
@@ -192,18 +190,6 @@ terraform -chdir=terraform apply destroy.tfplan
 ```
 
 Read the full destroy plan before applying it. Verify remaining AWS resources and storage charges afterwards. Do not destroy `terraform/bootstrap-state` or `terraform/backup-infra` as part of routine application teardown.
-
-## Reviewer checklist
-
-See [reviewer-checklist.md](docs/reviewer-checklist.md) for a concise pass/follow-up list covering repository hygiene, CI, operational evidence and remaining external checks.
-
-## Further documentation
-
-- [Recovery drill and evidence limitations](docs/restore-drill.md)
-- [OIDC trust and deployment workflow](docs/oidc-setup.md)
-- [Final evidence pack](docs/final-evidence.md)
-- [Evidence capture guide](docs/evidence-capture.md)
-- [Portfolio readiness and closeout](docs/portfolio-readiness.md)
 
 ## Verification status and limitations
 
