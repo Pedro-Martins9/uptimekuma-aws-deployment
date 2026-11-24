@@ -13,7 +13,7 @@ I built this project to practise the parts of cloud engineering that sit beyond 
 
 > **Deployment status: test-only.** The application stack is currently torn down. I provision it temporarily when testing and tear it down afterwards, so the public endpoint is normally unavailable.
 
-> **Portfolio highlight — recovery was demonstrated.** I replaced the EC2 host and restored the existing Uptime Kuma monitor configuration and history from S3. The recorded drill showed the dashboard usable approximately **13 minutes 11 seconds after replacement launch**. This is an observed recovery interval, not a formally measured RTO..
+> **Portfolio highlight — recovery was demonstrated.** I replaced the EC2 host and restored the existing Uptime Kuma monitor configuration and history from S3. The recorded drill showed the dashboard usable approximately **13 minutes 11 seconds after replacement launch**. This is an observed recovery interval, not a formally measured RTO.
 
 ## Project at a glance
 
@@ -60,7 +60,7 @@ The recovery path is designed to avoid blindly restoring an archive:
 4. SQLite integrity is checked before the restored data is made available to the ECS workload.
 5. Uptime Kuma returns with the previous monitor configuration and history.
 
-I ran the recovery drill on 16 October 2026. After EC2 replacement, I confirmed that the load-balancer target became healthy and the dashboard returned with its existing monitor data. I did not capture direct checksum output, SQLite integrity output, the exact first-healthy timestamp or the S3 object version ID, so I do not claim an exact RPO or RTO..
+I ran the recovery drill on 16 October 2026. After EC2 replacement, I confirmed that the load-balancer target became healthy and the dashboard returned with its existing monitor data. I did not capture direct checksum output, SQLite integrity output, the exact first-healthy timestamp or the S3 object version ID, so I do not claim an exact RPO or RTO.
 
 ### Deployment security
 
@@ -73,7 +73,7 @@ I ran the recovery drill on 16 October 2026. After EC2 replacement, I confirmed 
 
 ### Operational checks
 
-The project includes CloudWatch logging and alarms, SNS email notifications, and a custom backup-freshness metric. I checked the ECS dynamic host-port path on 20 October 2026: container port 3001 mapped to host port 32768, while the host ephemeral range observed was 32768–60999 and the security-group rule permitted TCP 32768–65535.
+I configured CloudWatch logging and alarms, SNS email notifications, and a custom backup-freshness metric. I also checked the ECS dynamic host-port path on 20 October 2026: container port 3001 mapped to host port 32768, while the host ephemeral range observed was 32768–60999 and the security-group rule permitted TCP 32768–65535.
 
 I have linked previous workflow runs below. They record the successful application deployment, alert wiring, backup-freshness metric fix and Terraform validation. These are historical records, not evidence that the stack is currently running or that I checked the live endpoint today.
 
