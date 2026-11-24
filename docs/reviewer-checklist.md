@@ -13,7 +13,7 @@ Use this checklist when evaluating the repository. It distinguishes source-level
 
 ## Automated checks
 
-- [x] Full-history Gitleaks workflow passed on 24 November 2026 (run 238).
+- [x] Full-history Gitleaks workflow passed on 24 November 2026 (run 238; README update commit).
 - [x] Previous Terraform format/validation workflow passed on the Terraform code revision (historical run linked in README).
 - [ ] Re-run Terraform formatting and validation on the latest source if Terraform files or workflow logic change.
 - [ ] Review GitHub Actions environment protection, repository variables/secrets and AWS OIDC trust policies in GitHub/AWS settings; these settings are not inspectable from the source tree alone.
